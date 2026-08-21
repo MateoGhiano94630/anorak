@@ -1,0 +1,38 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+        exclude: ^frontend/tsconfig.*\.json$
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      # Corta el commit si aparece una clave privada. Los certificados de ARCA
+      # van a estar en la máquina de desarrollo el día que se habilite la
+      # facturación, y basta un `git add .` distraído.
+      - id: detect-private-key
+      - id: check-merge-conflict
+
+  # ruff es el linter. El formateador es black y solo black — ver el hook de
+  # abajo. `ruff-format` no puede entrar acá: son dos formateadores con
+  # criterios distintos pisándose los mismos archivos en cada commit.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/
+
+  # La versión va clavada y tiene que ser la misma que instala el CI
+  # (backend/pyproject.toml, extra "dev"). Con una versión de un lado y otra
+  # del otro, el hook formatea de una manera y el CI exige otra: el commit sale
+  # verde en la máquina y rojo en GitHub sin que nadie haya hecho nada mal.
+  # Al subir esta versión hay que subir la del pyproject en el mismo commit.
+  - repo: https://github.com/psf/black
+    rev: 26.5.1
+    hooks:
+      - id: black
+        files: ^backend/
+        language_version: python3.12

@@ -1,0 +1,39 @@
+# Secretos — nunca, bajo ninguna circunstancia
+.env
+.env.*
+!.env.example
+*.key
+*.crt
+*.pem
+*.p12
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.db
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+.vite/
+coverage/
+playwright-report/
+test-results/
+
+# Editor / SO
+.DS_Store
+.idea/
+*.swp
+
+# MkDocs
+site/

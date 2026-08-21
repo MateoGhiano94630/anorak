@@ -1,0 +1,4 @@
+# El sistema es una sola página con rutas internas. Sin esta regla, entrar
+# directo a /usuarios o recargar esa pantalla devuelve 404 de Cloudflare:
+# el archivo no existe, la ruta la resuelve el navegador.
+/*  /index.html  200

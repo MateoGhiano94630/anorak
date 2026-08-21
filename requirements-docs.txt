@@ -1,0 +1,4 @@
+# Solo para armar el manual de usuario: `mkdocs serve` / `mkdocs build`.
+# No es dependencia del sistema, por eso está aparte del backend.
+mkdocs>=1.6.0
+mkdocs-material>=9.5.0

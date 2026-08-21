@@ -1,0 +1,24 @@
+site_name: Anorak — manual de uso
+site_description: Cómo se usa el sistema del local, explicado paso a paso
+docs_dir: docs/manual
+site_dir: site
+theme:
+  name: material
+  language: es
+  palette:
+    - scheme: default
+      primary: black
+      accent: indigo
+  features:
+    - navigation.sections
+    - content.code.copy
+nav:
+  - Presentación: index.md
+  - Entrar al sistema: entrar.md
+  - Usuarios: usuarios.md
+  - Sucursales: sucursales.md
+markdown_extensions:
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true

@@ -1,0 +1,10 @@
+# Railway usa Nixpacks. Las bibliotecas de sistema son las que necesita
+# WeasyPrint para armar los PDF de tickets y comprobantes.
+[phases.setup]
+nixPkgs = ['python312', 'gcc', 'pango', 'fontconfig']
+
+[phases.install]
+cmds = ['pip install -r requirements.txt']
+
+[start]
+cmd = 'alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT'
