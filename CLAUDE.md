@@ -51,6 +51,7 @@ Cada una viene de un error ya pagado. No se discuten, se aplican.
 | `UUIDType` propio de `app/core/types.py`, nunca `UUID(as_uuid=True)` del dialecto postgresql | El tipo nativo rompe en SQLite, que es donde corren los tests |
 | `FlexibleJSON` propio (`JSONB` con variante `sqlite`) | Mismo motivo |
 | `enum_texto()` para columnas de enum, nunca `String` pelado con `Mapped[MiEnum]` | Con `String`, la fila leída de la base vuelve como `str` y cualquier `.value` explota en producción |
+| Los servicios externos (ARCA, R2) se mockean con fixtures **automáticas** en `conftest.py` | Si hubiera que acordarse de pedirlas, el día que alguien escriba un test sin pedirla la suite sube archivos a un bucket real |
 | `StrEnum`, nunca `(str, Enum)` | |
 | Toda la plata en `Numeric`/`Decimal`. **Jamás float** | Un centavo mal redondeado en un cierre de caja es una hora de alguien buscándolo |
 | Type hints en todas las funciones, docstring en las públicas | `mypy --strict` tiene que pasar |
@@ -91,7 +92,9 @@ Están explicadas en `docs/arquitectura.md`. En una línea cada una:
 4. **La línea de venta guarda el precio con el que se vendió** (snapshot, no join).
 5. **Devolución y cambio son documentos propios**, no una venta en negativo.
 6. **La caja se abre y se cierra**, y cada cobro dice dónde termina la plata.
-7. **El precio tiene historia**, con quién lo cambió y cuándo.
+7. **El precio tiene historia**, con quién lo cambió y cuándo. Es un estado con
+   vigencia (`vigente_desde`/`vigente_hasta`) más un índice único parcial, no
+   una columna copiada en `variante` — ver D-19.
 
 Respuestas del dueño que fijan el modelo (20/08/2026):
 
@@ -116,6 +119,8 @@ Respuestas del dueño que fijan el modelo (20/08/2026):
 | El registro de auditoría de un UPDATE puede quedar sin el valor anterior si la columna nunca se leyó de la base | Los endpoints traen la fila con `db.get()` antes de tocarla. Documentado en el docstring de `_diff` |
 | Vitest levantaba los archivos de Playwright y fallaba con un error que no decía nada | `test.include` acotado a `src/` en `vite.config.ts` |
 | Las migraciones se autogeneran contra SQLite | Funciona porque todos los tipos son portables, pero **hay que leer el archivo generado** antes de commitearlo |
+| `client_admin` y `client_vendedor` eran el **mismo** cliente HTTP con el header pisado: un test que pedía los dos recibía el último resuelto, y los tests de permisos daban verde sin probar nada | Cada fixture de cliente abre el suyo (`_abrir_cliente` en `tests/conftest.py`) |
+| Una columna de enum como `String` con anotación `Mapped[MiEnum]` ya está cubierta arriba; la trampa emparentada es dejar `talle_id` nulo para lo que no tiene talle | PostgreSQL considera distintos entre sí dos nulos, así que la restricción de unicidad de variantes no serviría. Se usa una curva "Único" (D-18) |
 
 ## Documentación
 

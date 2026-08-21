@@ -34,7 +34,32 @@ Formato de fechas: dd/mm/aaaa.
 
 ## Catálogo
 
-Sin cambios todavía. Entra en la tanda 2.
+### 20/08/2026 — tanda 2
+
+**Agregado**
+
+- Curvas de talle: los conjuntos de talles que van juntos (S a XL, 35 al 45).
+  Cada categoría usa una, y así una remera no se puede cargar en talle 42.
+- Categorías, marcas y colores, con su tono para reconocerlos de un vistazo.
+- Prendas: nombre, categoría, marca, para quién es y temporada.
+- Generación de talles y colores de una vez: se eligen los talles y los
+  colores y salen todas las combinaciones juntas. Volver a hacerlo para sumar
+  un color no repite las que ya estaban.
+- Código interno automático para cada combinación, legible desde la etiqueta
+  (`NIKREMALG-M-NEG`), y código de barras del proveedor cuando lo trae.
+- Búsqueda de una prenda por cualquiera de los dos códigos.
+- Precios con historial: al cambiar uno, el anterior queda guardado con la
+  fecha hasta la que rigió. Se puede poner el mismo precio a toda una prenda
+  de una vez, o uno distinto por talle.
+- Fotos de las prendas.
+- Buscador y filtro por categoría en el catálogo, con el precio o el rango de
+  precios de cada prenda.
+
+**Decidido**
+
+- Los precios los cambia solo el administrador.
+- Una prenda sin precio no se va a poder vender: el sistema prefiere frenar
+  antes que cobrarla como si valiera cero.
 
 ## Stock
 

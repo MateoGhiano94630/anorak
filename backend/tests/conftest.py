@@ -11,9 +11,12 @@ Reglas que sostiene este archivo:
 """
 
 from collections.abc import AsyncGenerator
+from unittest.mock import MagicMock
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -26,6 +29,8 @@ from app.core import database
 from app.core.database import Base, get_db
 from app.core.security import create_access_token, hash_password
 from app.main import app
+from app.models.catalogo import Categoria, Color, CurvaTalle, Marca, Talle
+from app.models.producto import Producto
 from app.models.sucursal import Sucursal, TipoSucursal
 from app.models.usuario import RolUsuario, Usuario
 
@@ -137,9 +142,18 @@ def autenticar(cliente: AsyncClient, usuario: Usuario) -> AsyncClient:
     return cliente
 
 
-@pytest_asyncio.fixture
-async def client(db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Cliente HTTP contra la API, con la base del test inyectada."""
+async def _abrir_cliente(
+    db: AsyncSession, usuario: Usuario | None
+) -> AsyncGenerator[AsyncClient, None]:
+    """Abre un cliente HTTP propio, opcionalmente ya autenticado.
+
+    Cada fixture de cliente abre **el suyo**. La primera versión de este
+    archivo tenía un solo cliente y las fixtures por rol le cambiaban el
+    header: un test que pedía `client_admin` y `client_vendedor` a la vez
+    recibía el mismo objeto dos veces, con el header del que se hubiera
+    resuelto último. Los tests de permisos daban verde sin probar nada — que
+    es la peor forma de fallar que puede tener un test.
+    """
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db
@@ -148,19 +162,151 @@ async def client(db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
+        if usuario is not None:
+            autenticar(ac, usuario)
         yield ac
     app.dependency_overrides.clear()
 
 
 @pytest_asyncio.fixture
-async def client_admin(client: AsyncClient, usuario_admin: Usuario) -> AsyncClient:
-    """Cliente HTTP autenticado como admin."""
-    return autenticar(client, usuario_admin)
+async def client(db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Cliente HTTP sin sesión iniciada."""
+    async for cliente in _abrir_cliente(db, None):
+        yield cliente
+
+
+@pytest_asyncio.fixture
+async def client_admin(
+    db: AsyncSession, usuario_admin: Usuario
+) -> AsyncGenerator[AsyncClient, None]:
+    """Cliente HTTP autenticado como administrador."""
+    async for cliente in _abrir_cliente(db, usuario_admin):
+        yield cliente
+
+
+@pytest_asyncio.fixture
+async def client_encargado(
+    db: AsyncSession, usuario_encargado: Usuario
+) -> AsyncGenerator[AsyncClient, None]:
+    """Cliente HTTP autenticado como encargado."""
+    async for cliente in _abrir_cliente(db, usuario_encargado):
+        yield cliente
 
 
 @pytest_asyncio.fixture
 async def client_vendedor(
-    client: AsyncClient, usuario_vendedor: Usuario
-) -> AsyncClient:
+    db: AsyncSession, usuario_vendedor: Usuario
+) -> AsyncGenerator[AsyncClient, None]:
     """Cliente HTTP autenticado como vendedor."""
-    return autenticar(client, usuario_vendedor)
+    async for cliente in _abrir_cliente(db, usuario_vendedor):
+        yield cliente
+
+
+# ── Servicios externos ────────────────────────────────────────────────────────
+
+
+@pytest.fixture(autouse=True)
+def _sin_r2_real(mocker: MockerFixture) -> MagicMock:
+    """Ningún test habla con Cloudflare R2 de verdad.
+
+    `get_cliente_r2` es el único punto del sistema que sale a la red para las
+    imágenes, así que mockearlo ahí alcanza para todo. Es una fixture
+    automática a propósito: si hubiera que acordarse de pedirla, el día que
+    alguien escriba un test de imágenes sin pedirla, la suite empieza a subir
+    archivos a un bucket real.
+    """
+    cliente = MagicMock()
+
+    def _firmar(_metodo: str, **kwargs: object) -> str:
+        # Imita la forma de una dirección firmada real: algunos tests miran a
+        # qué objeto apunta, no la dirección entera.
+        parametros = kwargs["Params"]
+        assert isinstance(parametros, dict)
+        return f"https://r2.prueba/{parametros['Key']}?X-Amz-Signature=simulada"
+
+    cliente.generate_presigned_url.side_effect = _firmar
+    mocker.patch("app.services.r2_service.esta_configurado", return_value=True)
+    return mocker.patch("app.services.r2_service.get_cliente_r2", return_value=cliente)
+
+
+# ── Catálogo ──────────────────────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def curva_remeras(db: AsyncSession) -> CurvaTalle:
+    """Una curva de talles de remera, con el orden ya puesto."""
+    curva = CurvaTalle(nombre="Remeras", activa=True)
+    db.add(curva)
+    await db.flush()
+    for orden, valor in enumerate(["S", "M", "L", "XL"]):
+        db.add(Talle(curva_talle_id=curva.id, valor=valor, orden=orden, activo=True))
+    await db.flush()
+    await db.refresh(curva)
+    return curva
+
+
+@pytest_asyncio.fixture
+async def curva_calzado(db: AsyncSession) -> CurvaTalle:
+    """Una curva de calzado, para probar que los talles no se mezclan."""
+    curva = CurvaTalle(nombre="Calzado", activa=True)
+    db.add(curva)
+    await db.flush()
+    for orden, valor in enumerate(["38", "39", "40"]):
+        db.add(Talle(curva_talle_id=curva.id, valor=valor, orden=orden, activo=True))
+    await db.flush()
+    await db.refresh(curva)
+    return curva
+
+
+@pytest_asyncio.fixture
+async def categoria(db: AsyncSession, curva_remeras: CurvaTalle) -> Categoria:
+    """La categoría Remeras, con la curva de remeras."""
+    categoria = Categoria(
+        nombre="Remeras", curva_talle_id=curva_remeras.id, activa=True
+    )
+    db.add(categoria)
+    await db.flush()
+    await db.refresh(categoria)
+    return categoria
+
+
+@pytest_asyncio.fixture
+async def marca(db: AsyncSession) -> Marca:
+    """Una marca de prueba."""
+    marca = Marca(nombre="Nike", activa=True)
+    db.add(marca)
+    await db.flush()
+    return marca
+
+
+@pytest_asyncio.fixture
+async def color_negro(db: AsyncSession) -> Color:
+    """Color negro."""
+    color = Color(nombre="Negro", codigo_hex="#000000", activo=True)
+    db.add(color)
+    await db.flush()
+    return color
+
+
+@pytest_asyncio.fixture
+async def color_blanco(db: AsyncSession) -> Color:
+    """Color blanco."""
+    color = Color(nombre="Blanco", codigo_hex="#FFFFFF", activo=True)
+    db.add(color)
+    await db.flush()
+    return color
+
+
+@pytest_asyncio.fixture
+async def producto(db: AsyncSession, categoria: Categoria, marca: Marca) -> Producto:
+    """Una remera, todavía sin variantes."""
+    producto = Producto(
+        nombre="Remera lisa",
+        categoria_id=categoria.id,
+        marca_id=marca.id,
+        activo=True,
+    )
+    db.add(producto)
+    await db.flush()
+    await db.refresh(producto)
+    return producto

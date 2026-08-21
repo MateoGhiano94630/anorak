@@ -10,6 +10,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.audit_log import router as audit_log_router
 from app.api.auth import router as auth_router
+from app.api.catalogo import (
+    categorias_router,
+    colores_router,
+    curvas_router,
+    marcas_router,
+)
+from app.api.precios import router as precios_router
+from app.api.productos import router as productos_router
+from app.api.productos import variantes_router
 from app.api.sucursales import router as sucursales_router
 from app.api.usuarios import router as usuarios_router
 from app.core import (
@@ -66,6 +75,13 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(usuarios_router)
 app.include_router(sucursales_router)
+app.include_router(marcas_router)
+app.include_router(curvas_router)
+app.include_router(colores_router)
+app.include_router(categorias_router)
+app.include_router(productos_router)
+app.include_router(variantes_router)
+app.include_router(precios_router)
 app.include_router(audit_log_router)
 
 

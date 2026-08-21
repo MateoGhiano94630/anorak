@@ -136,6 +136,117 @@ export const AYUDA = {
       },
     ],
   },
+  catalogo: {
+    titulo: 'Catálogo',
+    resumen: 'Todas las prendas que vende el local, con sus talles, colores y precios.',
+    preguntas: [
+      {
+        pregunta: '¿Qué diferencia hay entre una prenda y sus talles?',
+        respuesta:
+          'La prenda es el modelo: "Remera de algodón Nike". Lo que se vende y se ' +
+          'cuenta es cada combinación de talle y color: la negra en M es una cosa y ' +
+          'la blanca en L es otra. Por eso primero se carga la prenda y después se ' +
+          'generan todas sus combinaciones de una vez.',
+      },
+      {
+        pregunta: '¿Por qué me pide elegir una categoría antes de cargar la prenda?',
+        respuesta:
+          'Porque la categoría es la que dice qué talles existen para esa prenda. ' +
+          'Las remeras van de S a XL y el calzado del 35 al 45. Es lo que evita ' +
+          'cargar una remera en talle 42 por error.',
+      },
+      {
+        pregunta: 'El listado muestra dos precios separados por un guion.',
+        respuesta:
+          'Es el precio más bajo y el más alto de esa prenda. Si todos los talles ' +
+          'valen lo mismo, aparece un solo precio. Dos precios distintos quieren ' +
+          'decir que algún talle o color tiene el suyo.',
+      },
+      {
+        pregunta: 'Una prenda aparece sin precio.',
+        respuesta:
+          'Todavía no se le puso. Al mostrador no se le va a poder vender hasta que ' +
+          'tenga uno: el sistema prefiere frenar antes que cobrarla como si valiera ' +
+          'cero. Entrá a la prenda y usá "Poner precio a todo".',
+      },
+    ],
+  },
+  producto: {
+    titulo: 'Una prenda',
+    resumen: 'Los talles y colores de una prenda, sus códigos, sus precios y sus fotos.',
+    preguntas: [
+      {
+        pregunta: '¿Qué es el código que aparece al lado de cada talle?',
+        respuesta:
+          'Es el código interno con el que el sistema reconoce esa prenda exacta. ' +
+          'Lo propone el sistema con la marca, el nombre, el talle y el color, para ' +
+          'que se pueda leer de un vistazo. Se puede corregir si preferís otro.',
+      },
+      {
+        pregunta: '¿Y el código de barras?',
+        respuesta:
+          'Es el de la etiqueta del proveedor, cuando la trae. Es opcional: mucha ' +
+          'ropa no viene con uno. Si lo cargás, el mostrador encuentra la prenda ' +
+          'pasando el lector por la etiqueta.',
+      },
+      {
+        pregunta: 'Agregué un color nuevo. ¿Tengo que cargar todo de nuevo?',
+        respuesta:
+          'No. Volvé a generar las combinaciones eligiendo todos los talles y el ' +
+          'color nuevo: las que ya existían quedan como estaban y solo se agregan ' +
+          'las que faltaban.',
+      },
+      {
+        pregunta: '¿Por qué no puedo cambiar el precio?',
+        respuesta:
+          'Los precios los cambia solamente el administrador. Un descuento en una ' +
+          'venta puntual es otra cosa y esa sí la puede hacer quien atiende, dentro ' +
+          'del tope de su puesto.',
+      },
+      {
+        pregunta: '¿Qué pasa con el precio anterior cuando lo cambio?',
+        respuesta:
+          'Queda guardado con la fecha hasta la que rigió. Nunca se pisa. Así una ' +
+          'venta del mes pasado se puede explicar con el precio que tenía entonces, ' +
+          'y se puede ver cómo fue cambiando el margen de esa prenda.',
+      },
+    ],
+  },
+  catalogosBase: {
+    titulo: 'Marcas, colores y categorías',
+    resumen: 'Las listas de las que salen las opciones al cargar una prenda.',
+    preguntas: [
+      {
+        pregunta: '¿Por qué tengo que elegir el talle de una lista en vez de escribirlo?',
+        respuesta:
+          'Porque escrito a mano, en tres meses conviven "M" y "m" como si fueran ' +
+          'dos talles distintos. Cuando quieras saber qué talles se te cambian más ' +
+          '—que es lo que te dice qué estás comprando de más— el dato saldría ' +
+          'partido en dos y no serviría.',
+      },
+      {
+        pregunta: '¿Qué es una curva de talles?',
+        respuesta:
+          'Es el conjunto de talles que van juntos: S, M, L y XL para remeras; del ' +
+          '35 al 45 para calzado. Cada categoría usa una, y así las prendas de esa ' +
+          'categoría solo pueden cargarse en los talles que existen de verdad.',
+      },
+      {
+        pregunta: 'Vendo algo que no tiene talle, como una gorra.',
+        respuesta:
+          'Creá una curva con un solo talle llamado "Único" y usala en esa ' +
+          'categoría. El sistema pide siempre un talle porque es lo que le permite ' +
+          'distinguir una prenda de otra sin equivocarse.',
+      },
+      {
+        pregunta: '¿Puedo borrar una marca o un color que ya no uso?',
+        respuesta:
+          'No se borran: se desactivan. Dejan de aparecer al cargar prendas nuevas, ' +
+          'pero las que ya estaban cargadas con ese color siguen mostrándolo. Si se ' +
+          'borrara, esas prendas quedarían sin saber de qué color eran.',
+      },
+    ],
+  },
 } as const satisfies Record<string, AyudaPantalla>
 
 /** Los nombres de pantalla que tienen ayuda escrita. */

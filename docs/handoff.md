@@ -4,7 +4,7 @@ Qué está hecho, qué está a medias y qué falta. Este archivo se actualiza al
 cerrar cada tanda, y dice la verdad aunque sea incómoda: un "listo" que no lo
 está cuesta más caro que un pendiente anotado.
 
-**Última actualización**: 20/08/2026 — cierre de la tanda 1.
+**Última actualización**: 20/08/2026 — cierre de la tanda 2.
 
 ---
 
@@ -12,11 +12,11 @@ está cuesta más caro que un pendiente anotado.
 
 | | |
 |---|---|
-| Tanda actual | 1 (base) — **cerrada** |
-| Próxima | 2 (catálogo: productos, variantes, categorías, marcas, precios) |
-| Tests backend | 36, todos en verde |
-| Tests frontend | 10 unitarios + 3 de punta a punta |
-| Migraciones | 1, aplicada. Sin pendientes |
+| Tanda actual | 2 (catálogo) — **cerrada** |
+| Próxima | 3 (stock: existencias por variante y sucursal, movimientos, ajustes, alertas de mínimo) |
+| Tests backend | 76, todos en verde |
+| Tests frontend | 19 unitarios + 3 de punta a punta (por 2 dispositivos) |
+| Migraciones | 2, aplicadas. Sin pendientes |
 | CI | Escrito y completo. **Todavía no corrió en GitHub**: el repositorio es local |
 | Despliegue | **No desplegado.** Ni Railway ni Cloudflare Pages están configurados |
 
@@ -44,9 +44,32 @@ está cuesta más caro que un pendiente anotado.
 - **Chequeo de esquema** al arrancar: compara la revisión de la base contra el
   head del código y loguea ERROR si difieren, sin frenar el arranque.
 
-Probado a mano de punta a punta el 20/08/2026: ingreso con la cuenta del seed,
-listado y alta de sucursal, y lectura del registro de auditoría distinguiendo
-lo que escribió el sistema (sin usuario) de lo que escribió una persona.
+Probado a mano de punta a punta el 20/08/2026, dos veces:
+
+1. Contra la API: ingreso con la cuenta del seed, alta de sucursal, y lectura
+   del registro de auditoría distinguiendo lo que escribió el sistema (sin
+   usuario) de lo que escribió una persona.
+2. En un navegador real, con el frontend contra la API: ingreso, alta de curva
+   de talles, categoría, marca y color; alta de una prenda; generación de sus
+   combinaciones; carga del precio; y verificación de que el catálogo la
+   muestra con el importe bien formateado. Sin errores en la consola.
+
+### Backend — catálogo (tanda 2)
+
+- **Curvas de talle** con sus talles ordenados, **categorías** (cada una con su
+  curva), **marcas** y **colores** con su tono.
+- **Productos** con categoría, marca, género y temporada; búsqueda por texto y
+  filtro por categoría y marca.
+- **Generación de variantes**: se eligen talles y colores y se crean todas las
+  combinaciones. Las que ya existen se saltean, así sumar un color es volver a
+  ejecutarlo. Un talle que no pertenece a la curva de la categoría se rechaza.
+- **Código interno automático** por variante, legible y único, y código de
+  barras opcional del proveedor. Búsqueda por cualquiera de los dos.
+- **Precios con vigencia**: cambiar uno cierra el anterior. Un índice único
+  parcial impide dos precios vigentes para la misma variante. Cambio masivo
+  por producto y consulta del historial.
+- **Imágenes** en Cloudflare R2, con dirección firmada al servir. Nunca se
+  contacta R2 en los tests.
 
 ### Frontend
 
@@ -58,8 +81,11 @@ lo que escribió el sistema (sin usuario) de lo que escribió una persona.
 - **Componentes base**: `<Listado>` (tabla en pantalla ancha, tarjetas en
   angosta, desde una sola definición de columnas), `<CampoFecha>` (dd/mm/aaaa,
   sin `<input type="date">`), `<Campo>`, `<Selector>`, `<Boton>`, `<Ayuda>`.
+- **Pantallas de catálogo**: listado con buscador, filtro y rango de precios;
+  detalle de la prenda con generación de talles y colores, precios, historial y
+  fotos; y la pantalla de marcas, colores, categorías y curvas de talle.
 - **Bibliotecas propias**: `lib/fecha.ts`, `lib/dinero.ts`, `lib/api.ts`,
-  `lib/sesion.ts`, `lib/ayuda.ts`.
+  `lib/sesion.ts`, `lib/ayuda.ts`, `lib/etiquetas.ts`, `lib/catalogos.ts`.
 - **PWA**: manifest y service worker generados en el build. La cola offline
   (Dexie) **no está escrita todavía** — va con la tanda del punto de venta.
 
@@ -75,6 +101,8 @@ lo que escribió el sistema (sin usuario) de lo que escribió una persona.
 | P-4 | El manual de usuario tiene la estructura y las páginas de la tanda 1. Falta publicarlo | Va creciendo con cada tanda |
 | P-5 | La cola offline del punto de venta (Dexie) está decidida y documentada, pero no escrita | Tanda 4 |
 | P-6 | La facturación está apagada (`ARCA_HABILITADO=false`) y sin certificados | Cuando el dueño los tenga |
+| P-7 | R2 no tiene credenciales cargadas. Las fotos se pueden subir solo cuando estén: sin ellas, la subida contesta 503 con un mensaje claro y el catálogo funciona igual sin imágenes | Cuando el dueño abra la cuenta de Cloudflare |
+| P-8 | Los tests de punta a punta del CI no levantan el backend, así que prueban el frontend solo. El circuito completo se verificó a mano | Evaluar un trabajo de CI que levante los dos, en una tanda próxima |
 
 ## 4. Cosas que hay que saber antes de tocar algo
 
@@ -94,10 +122,20 @@ lo que escribió el sistema (sin usuario) de lo que escribió una persona.
 - **Vender sin stock está bloqueado** por decisión del dueño, pero detrás de
   `PERMITIR_STOCK_NEGATIVO`. Si alguna vez hay que cambiarlo, es una variable
   de entorno.
+- **Cada fixture de cliente HTTP abre el suyo.** No volver a la versión que
+  compartía uno solo cambiándole el header: un test que pide `client_admin` y
+  `client_vendedor` a la vez recibiría el mismo objeto, y los tests de permisos
+  darían verde sin probar nada.
+- **Una categoría siempre tiene curva de talles**, incluso para lo que no tiene
+  talle (curva "Único"). No hacer que `talle_id` acepte nulos: la restricción
+  de unicidad de variantes dejaría de funcionar (D-18).
+- **El precio vigente es la fila con `vigente_hasta` nulo.** No agregar una
+  columna de precio actual en `variante`: sería una segunda versión del mismo
+  dato (D-19).
 
 ---
 
 ## 5. Nada roto
 
 No hay tests en rojo, ni migraciones sin aplicar, ni funcionalidad a medias
-dentro de la tanda 1.
+dentro de las tandas 1 y 2.

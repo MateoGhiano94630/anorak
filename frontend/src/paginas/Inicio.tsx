@@ -15,6 +15,18 @@ interface Acceso {
 
 const ACCESOS: Acceso[] = [
   {
+    ruta: '/catalogo',
+    titulo: 'Catálogo',
+    detalle: 'Las prendas del local, con sus talles, colores y precios.',
+    roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'],
+  },
+  {
+    ruta: '/catalogos',
+    titulo: 'Marcas y talles',
+    detalle: 'Las listas de las que salen las opciones al cargar una prenda.',
+    roles: ['ADMIN', 'ENCARGADO'],
+  },
+  {
     ruta: '/sucursales',
     titulo: 'Sucursales',
     detalle: 'Los locales y depósitos donde hay mercadería y caja.',
@@ -41,7 +53,7 @@ export function Inicio() {
       <div>
         <h1 className="text-xl font-semibold">Hola, {usuario.nombre}</h1>
         <p className="mt-1 text-sm text-slate-600">
-          El catálogo, el stock y el mostrador se suman en las próximas etapas.
+          El control de existencias y el mostrador se suman en las próximas etapas.
         </p>
       </div>
 

@@ -80,3 +80,39 @@ export async function pedir<T>(ruta: string, opciones: Opciones = {}): Promise<T
   if (respuesta.status === 204) return undefined as T
   return (await respuesta.json()) as T
 }
+
+/** Sube un archivo. Va aparte de `pedir` porque no lleva JSON sino un formulario.
+ *
+ * No se le pone `Content-Type` a mano a propósito: el navegador lo arma solo
+ * con el separador que necesita el formulario. Poniéndolo, el servidor recibe
+ * un cuerpo que no puede leer.
+ */
+export async function subirArchivo<T>(ruta: string, archivo: File): Promise<T> {
+  const formulario = new FormData()
+  formulario.append('archivo', archivo)
+
+  const cabeceras: Record<string, string> = {}
+  const token = leerToken()
+  if (token) cabeceras['Authorization'] = `Bearer ${token}`
+
+  let respuesta: Response
+  try {
+    respuesta = await fetch(`${BASE}${ruta}`, {
+      method: 'POST',
+      headers: cabeceras,
+      body: formulario,
+    })
+  } catch {
+    throw new ErrorApi('Sin conexión con el servidor.', 0)
+  }
+
+  if (respuesta.status === 401) {
+    limpiarToken()
+    window.dispatchEvent(new CustomEvent(EVENTO_SESION_VENCIDA))
+    throw new ErrorApi('Tu sesión terminó. Volvé a entrar.', 401)
+  }
+  if (!respuesta.ok) {
+    throw new ErrorApi(await mensajeDeError(respuesta), respuesta.status)
+  }
+  return (await respuesta.json()) as T
+}

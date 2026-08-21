@@ -5,7 +5,7 @@ hace; lo que no se puede leer del código es qué alternativa se descartó y a
 cambio de qué. Cuando una regla cambie, se actualiza el razonamiento acá, no
 solo el código.
 
-Última revisión: 20/08/2026 (tanda 1).
+Última revisión: 20/08/2026 (tanda 2).
 
 ---
 
@@ -341,6 +341,84 @@ recién creado en Python conserva el enum y los tests pasan, pero la fila
 leída de la base vuelve como `str` y cualquier `.value` explota. Se descubrió
 probando el ingreso a mano, con la suite entera en verde.
 
+### D-17 · Los colores también son un catálogo cerrado
+
+El dueño eligió catálogo cerrado para los talles. La misma razón vale para los
+colores, así que se modelaron igual: si fueran texto libre, en tres meses
+conviven "Negro" y "negro" como si fueran dos colores distintos, y el stock de
+esa prenda queda partido en dos.
+
+El costo es una pantalla de administración más. El beneficio es que el reporte
+de qué se vende y qué se cambia sale entero.
+
+### D-18 · La categoría siempre tiene curva de talles, incluso para lo que no tiene talle
+
+Una gorra o un cinto van en una categoría cuya curva es "Único", con un solo
+talle.
+
+**Alternativa descartada**: dejar que la categoría no tenga curva y que la
+variante quede con el talle vacío. Rompe la restricción de unicidad de las
+variantes: en PostgreSQL, dos filas con un valor nulo se consideran distintas
+entre sí, así que el mismo producto en el mismo color se podría cargar dos
+veces sin que la base lo impidiera. El stock de esa prenda quedaría partido en
+dos filas y ninguna de las dos diría cuánto hay.
+
+El costo es crear una curva con un solo talle. El manual lo explica.
+
+### D-19 · El precio es un estado con vigencia, no una copia
+
+La tabla `precio` guarda `vigente_desde` y `vigente_hasta`. El precio actual es
+la fila con `vigente_hasta` nulo, y un **índice único parcial** garantiza que
+haya exactamente una por variante: la base no admite dos precios vigentes ni
+aunque el código que los escribe tenga un error.
+
+Cambiar un precio no modifica la fila anterior: le pone fecha de fin y agrega
+una nueva. Así una venta de marzo se explica con el precio de marzo.
+
+**Por qué no se guarda además el precio actual como columna de `variante`**,
+que es lo que sí se va a hacer con el stock (D-3): son dos formas distintas de
+dato. El stock es una **suma de movimientos**, una cuenta que puede desviarse,
+y por eso conviene tener el total guardado y poder compararlo contra la suma —
+si no coinciden, hay un bug y se nota. El precio no es una cuenta: es un
+estado, y en cualquier momento hay exactamente una fila vigente. Copiarlo a
+`variante` agregaría una segunda versión del mismo dato que se puede
+desincronizar, sin ganar la posibilidad de detectar nada.
+
+El registro de auditoría (D-10) también deja rastro de cada cambio de precio,
+pero no reemplaza a esta tabla: el `audit_log` es una herramienta de
+diagnóstico genérica, y "mostrame cómo evolucionó el margen de esta prenda" no
+puede depender de leer JSON de auditoría.
+
+### D-20 · El código interno de una variante se arma legible
+
+El SKU sale de la marca, las iniciales de las palabras del producto, el talle y
+el color: `NIKREMALG-M-NEG`. Quien atiende lo lee de la etiqueta y sabe qué
+prenda es sin consultar nada.
+
+Se toman las primeras letras de **cada palabra** y no del nombre entero: con lo
+segundo, "Remera lisa" y "Remera estampada" quedaban las dos como `REMER` y se
+distinguían solo por el número que el sistema agrega al final para desempatar.
+Un local con veinte productos que empiezan con "Remera" terminaría con códigos
+que no dicen nada, que es lo único para lo que están.
+
+Los acentos se sacan antes de recortar: si no, "Niño" y "Nino" generan códigos
+distintos para lo mismo.
+
+### D-21 · De las imágenes se guarda la clave, no la dirección
+
+En la base va la clave del objeto en R2. Las direcciones de R2 se firman y
+vencen, así que guardar una dejaría la base llena de direcciones muertas; la
+dirección para mostrar se arma en el momento de responder.
+
+Que falte una foto no puede tumbar la pantalla de catálogo: si R2 no está
+configurado en este servidor, o no contesta, el producto se muestra igual sin
+la imagen.
+
+Y al borrar, el error de R2 no se propaga: la fila de la base se borra igual.
+Quedarse con una foto huérfana en el bucket cuesta centavos; dejar en el
+sistema una foto que la persona ya borró se lee como que el sistema no
+obedece.
+
 ---
 
 ## 8. Cómo se construye: en rodajas verticales
@@ -352,7 +430,7 @@ funcionando.
 | # | Tanda | Estado |
 |---|---|---|
 | 1 | Base: repo, CI, auth con roles, layout, auditoría automática, migraciones | **Hecha** (20/08/2026) |
-| 2 | Catálogo: productos, variantes, categorías, marcas, imágenes, precios | Pendiente |
+| 2 | Catálogo: productos, variantes, categorías, marcas, imágenes, precios | **Hecha** (20/08/2026) |
 | 3 | Stock: existencias por variante y sucursal, movimientos, ajustes, alertas de mínimo | Pendiente |
 | 4 | POS: venta, medios de pago, caja abierta/cerrada, ticket en PDF | Pendiente |
 | 5 | Devoluciones y cambios | Pendiente |

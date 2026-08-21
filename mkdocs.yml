@@ -15,8 +15,13 @@ theme:
 nav:
   - Presentación: index.md
   - Entrar al sistema: entrar.md
-  - Usuarios: usuarios.md
-  - Sucursales: sucursales.md
+  - Catálogo:
+      - El catálogo: catalogo.md
+      - Una prenda por dentro: prenda.md
+      - Marcas, colores y categorías: marcas-y-talles.md
+  - Administración:
+      - Usuarios: usuarios.md
+      - Sucursales: sucursales.md
 markdown_extensions:
   - admonition
   - attr_list
