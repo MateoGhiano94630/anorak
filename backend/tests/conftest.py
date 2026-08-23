@@ -30,7 +30,7 @@ from app.core.database import Base, get_db
 from app.core.security import create_access_token, hash_password
 from app.main import app
 from app.models.catalogo import Categoria, Color, CurvaTalle, Marca, Talle
-from app.models.producto import Producto
+from app.models.producto import Producto, Variante
 from app.models.sucursal import Sucursal, TipoSucursal
 from app.models.usuario import RolUsuario, Usuario
 
@@ -295,6 +295,27 @@ async def color_blanco(db: AsyncSession) -> Color:
     db.add(color)
     await db.flush()
     return color
+
+
+@pytest_asyncio.fixture
+async def variante(
+    db: AsyncSession,
+    producto: Producto,
+    curva_remeras: CurvaTalle,
+    color_negro: Color,
+) -> Variante:
+    """Una remera negra en talle M: la unidad que se vende y se cuenta."""
+    variante = Variante(
+        producto_id=producto.id,
+        talle_id=curva_remeras.talles[1].id,
+        color_id=color_negro.id,
+        sku="NIKREMLIS-M-NEG",
+        activa=True,
+    )
+    db.add(variante)
+    await db.flush()
+    await db.refresh(variante)
+    return variante
 
 
 @pytest_asyncio.fixture

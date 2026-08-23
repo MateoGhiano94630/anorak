@@ -52,6 +52,7 @@ Cada una viene de un error ya pagado. No se discuten, se aplican.
 | `FlexibleJSON` propio (`JSONB` con variante `sqlite`) | Mismo motivo |
 | `enum_texto()` para columnas de enum, nunca `String` pelado con `Mapped[MiEnum]` | Con `String`, la fila leída de la base vuelve como `str` y cualquier `.value` explota en producción |
 | Los servicios externos (ARCA, R2) se mockean con fixtures **automáticas** en `conftest.py` | Si hubiera que acordarse de pedirlas, el día que alguien escriba un test sin pedirla la suite sube archivos a un bucket real |
+| Todo cambio de stock pasa por `stock_service.registrar_movimiento()`. Ningún módulo toca `stock.cantidad` a mano | Si cada módulo actualizara el saldo por su cuenta, alcanzaría con que uno se olvide del movimiento para que el número quede sin explicación |
 | `StrEnum`, nunca `(str, Enum)` | |
 | Toda la plata en `Numeric`/`Decimal`. **Jamás float** | Un centavo mal redondeado en un cierre de caja es una hora de alguien buscándolo |
 | Type hints en todas las funciones, docstring en las públicas | `mypy --strict` tiene que pasar |
@@ -71,6 +72,7 @@ Cada una viene de un error ya pagado. No se discuten, se aplican.
 | Los listados van con `<Listado>`, nunca una `<table>` suelta | Tabla en pantalla ancha y tarjetas en angosta, desde una sola definición de columnas |
 | Ningún campo de carga por debajo de **16px** (`text-base`) | iOS amplía la pantalla solo al tocarlo |
 | Los textos de ayuda viven **todos** en `lib/ayuda.ts`, nunca sueltos en una pantalla | El manual de usuario se arma de ahí: así las dos fuentes no se contradicen |
+| Dos campos de una misma pantalla nunca llevan la misma etiqueta | "Motivo" y "Motivo" obligan a adivinar cuál es cuál, y un lector de pantalla los lee idénticos |
 
 ### Datos
 
@@ -88,7 +90,8 @@ Están explicadas en `docs/arquitectura.md`. En una línea cada una:
 1. **Producto → Variante → Stock.** El stock nunca cuelga del producto.
 2. **Multi-sucursal desde el día uno**, aunque hoy haya un solo local.
 3. **El movimiento de stock es un hecho y no se borra.** El stock actual se
-   puede reconstruir sumando movimientos.
+   puede reconstruir sumando movimientos, y `GET /stock/control` compara las
+   dos formas de contar: si difieren, hay un bug — ver D-22.
 4. **La línea de venta guarda el precio con el que se vendió** (snapshot, no join).
 5. **Devolución y cambio son documentos propios**, no una venta en negativo.
 6. **La caja se abre y se cierra**, y cada cobro dice dónde termina la plata.

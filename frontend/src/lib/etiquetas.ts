@@ -5,7 +5,7 @@
  * un valor guardado, "Niño" es lo que va en la pantalla.
  */
 
-import type { Genero, Rol, Temporada, TipoSucursal } from './tipos'
+import type { Genero, Rol, Temporada, TipoMovimiento, TipoSucursal } from './tipos'
 
 export const NOMBRE_GENERO: Record<Genero, string> = {
   HOMBRE: 'Hombre',
@@ -27,6 +27,16 @@ export const NOMBRE_ROL: Record<Rol, string> = {
   ADMIN: 'Administrador',
   ENCARGADO: 'Encargado',
   VENDEDOR: 'Vendedor',
+}
+
+export const NOMBRE_MOVIMIENTO: Record<TipoMovimiento, string> = {
+  INGRESO: 'Mercadería que llegó',
+  AJUSTE: 'Corrección por conteo',
+  VENTA: 'Venta',
+  DEVOLUCION: 'Devolución',
+  TRANSFERENCIA_SALIDA: 'Salió a otra sucursal',
+  TRANSFERENCIA_ENTRADA: 'Llegó de otra sucursal',
+  CONTEO: 'Conteo de inventario',
 }
 
 export const NOMBRE_TIPO_SUCURSAL: Record<TipoSucursal, string> = {

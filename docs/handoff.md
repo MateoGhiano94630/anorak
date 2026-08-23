@@ -4,7 +4,7 @@ Qué está hecho, qué está a medias y qué falta. Este archivo se actualiza al
 cerrar cada tanda, y dice la verdad aunque sea incómoda: un "listo" que no lo
 está cuesta más caro que un pendiente anotado.
 
-**Última actualización**: 20/08/2026 — cierre de la tanda 2.
+**Última actualización**: 23/08/2026 — cierre de la tanda 3.
 
 ---
 
@@ -12,11 +12,11 @@ está cuesta más caro que un pendiente anotado.
 
 | | |
 |---|---|
-| Tanda actual | 2 (catálogo) — **cerrada** |
-| Próxima | 3 (stock: existencias por variante y sucursal, movimientos, ajustes, alertas de mínimo) |
-| Tests backend | 76, todos en verde |
-| Tests frontend | 19 unitarios + 3 de punta a punta (por 2 dispositivos) |
-| Migraciones | 2, aplicadas. Sin pendientes |
+| Tanda actual | 3 (stock) — **cerrada** |
+| Próxima | 4 (POS: venta, medios de pago, caja abierta/cerrada, ticket en PDF) |
+| Tests backend | 103, todos en verde |
+| Tests frontend | 22 unitarios + 3 de punta a punta (por 2 dispositivos) |
+| Migraciones | 3, aplicadas. Sin pendientes |
 | CI | Escrito y completo. **Todavía no corrió en GitHub**: el repositorio es local |
 | Despliegue | **No desplegado.** Ni Railway ni Cloudflare Pages están configurados |
 
@@ -53,6 +53,10 @@ Probado a mano de punta a punta el 20/08/2026, dos veces:
    de talles, categoría, marca y color; alta de una prenda; generación de sus
    combinaciones; carga del precio; y verificación de que el catálogo la
    muestra con el importe bien formateado. Sin errores en la consola.
+3. En un navegador real (23/08/2026): carga de mercadería por código,
+   corrección por conteo con el panel actualizándose sin recargar, mínimo y
+   filtro de reposición, y el historial mostrando los dos movimientos con su
+   signo y cuánto quedó. Sin errores en la consola.
 
 ### Backend — catálogo (tanda 2)
 
@@ -71,6 +75,24 @@ Probado a mano de punta a punta el 20/08/2026, dos veces:
 - **Imágenes** en Cloudflare R2, con dirección firmada al servir. Nunca se
   contacta R2 en los tests.
 
+### Backend — stock (tanda 3)
+
+- **Existencias por variante y sucursal.** La fila nace con el primer
+  movimiento, no al dar de alta la prenda.
+- **Un solo punto de escritura**: `stock_service.registrar_movimiento()`. Toma
+  la fila con `with_for_update()` para que dos cajas no vendan la misma última
+  unidad.
+- **Movimientos inmutables** con tipo, cantidad con signo, cuánto quedó,
+  motivo, y el documento que los originó cuando lo hay. Sin endpoint de
+  borrado, con un test que lo comprueba.
+- **Ingresos y ajustes** desde la pantalla; el resto de los tipos los va a
+  generar el módulo que corresponda (venta, devolución, transferencia).
+- **Alertas de mínimo** por prenda y sucursal.
+- **Control de consistencia** (`GET /stock/control`, solo admin): compara el
+  saldo contra la suma de movimientos. Tiene que devolver siempre vacío.
+- Vender sin existencias se rechaza con `StockInsuficienteError`; el ajuste a
+  la baja nunca se rechaza.
+
 ### Frontend
 
 - **Ingreso** con el token en memoria. Al recargar la pestaña hay que volver a
@@ -84,8 +106,12 @@ Probado a mano de punta a punta el 20/08/2026, dos veces:
 - **Pantallas de catálogo**: listado con buscador, filtro y rango de precios;
   detalle de la prenda con generación de talles y colores, precios, historial y
   fotos; y la pantalla de marcas, colores, categorías y curvas de talle.
+- **Pantallas de existencias**: listado con buscador, filtro por local y por
+  "lo que hay que reponer"; panel por prenda para cargar, corregir y fijar el
+  mínimo; carga de mercadería por código; e historial de movimientos.
 - **Bibliotecas propias**: `lib/fecha.ts`, `lib/dinero.ts`, `lib/api.ts`,
-  `lib/sesion.ts`, `lib/ayuda.ts`, `lib/etiquetas.ts`, `lib/catalogos.ts`.
+  `lib/sesion.ts`, `lib/ayuda.ts`, `lib/etiquetas.ts`, `lib/catalogos.ts`,
+  `lib/stock.ts`.
 - **PWA**: manifest y service worker generados en el build. La cola offline
   (Dexie) **no está escrita todavía** — va con la tanda del punto de venta.
 
@@ -132,10 +158,15 @@ Probado a mano de punta a punta el 20/08/2026, dos veces:
 - **El precio vigente es la fila con `vigente_hasta` nulo.** No agregar una
   columna de precio actual en `variante`: sería una segunda versión del mismo
   dato (D-19).
+- **Ningún módulo toca `stock.cantidad`.** Todo pasa por
+  `stock_service.registrar_movimiento()` (D-23). El día que `GET /stock/control`
+  devuelva algo, es que alguien rompió esta regla.
+- **Un mínimo en cero no alerta.** No sacar esa condición: sin ella, toda
+  prenda agotada del catálogo aparecería en las alertas (D-25).
 
 ---
 
 ## 5. Nada roto
 
 No hay tests en rojo, ni migraciones sin aplicar, ni funcionalidad a medias
-dentro de las tandas 1 y 2.
+dentro de las tandas 1, 2 y 3.

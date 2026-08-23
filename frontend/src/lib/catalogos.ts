@@ -9,7 +9,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 
 import { pedir } from './api'
-import type { Categoria, Color, CurvaTalle, Marca } from './tipos'
+import type { Categoria, Color, CurvaTalle, Marca, Sucursal } from './tipos'
 
 export function useMarcas(): UseQueryResult<Marca[]> {
   return useQuery({ queryKey: ['marcas'], queryFn: () => pedir<Marca[]>('/marcas') })
@@ -30,5 +30,12 @@ export function useCurvas(): UseQueryResult<CurvaTalle[]> {
   return useQuery({
     queryKey: ['curvas-talle'],
     queryFn: () => pedir<CurvaTalle[]>('/curvas-talle'),
+  })
+}
+
+export function useSucursales(): UseQueryResult<Sucursal[]> {
+  return useQuery({
+    queryKey: ['sucursales'],
+    queryFn: () => pedir<Sucursal[]>('/sucursales'),
   })
 }

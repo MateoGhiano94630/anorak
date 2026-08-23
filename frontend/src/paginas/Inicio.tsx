@@ -21,6 +21,18 @@ const ACCESOS: Acceso[] = [
     roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'],
   },
   {
+    ruta: '/existencias',
+    titulo: 'Existencias',
+    detalle: 'Cuánto hay de cada prenda y qué se está por acabar.',
+    roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'],
+  },
+  {
+    ruta: '/movimientos',
+    titulo: 'Movimientos',
+    detalle: 'Todo lo que entró y salió, con quién lo hizo y cuándo.',
+    roles: ['ADMIN', 'ENCARGADO'],
+  },
+  {
     ruta: '/catalogos',
     titulo: 'Marcas y talles',
     detalle: 'Las listas de las que salen las opciones al cargar una prenda.',
@@ -53,7 +65,7 @@ export function Inicio() {
       <div>
         <h1 className="text-xl font-semibold">Hola, {usuario.nombre}</h1>
         <p className="mt-1 text-sm text-slate-600">
-          El control de existencias y el mostrador se suman en las próximas etapas.
+          El mostrador y la caja se suman en las próximas etapas.
         </p>
       </div>
 

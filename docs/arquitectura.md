@@ -5,7 +5,7 @@ hace; lo que no se puede leer del código es qué alternativa se descartó y a
 cambio de qué. Cuando una regla cambie, se actualiza el razonamiento acá, no
 solo el código.
 
-Última revisión: 20/08/2026 (tanda 2).
+Última revisión: 23/08/2026 (tanda 3).
 
 ---
 
@@ -419,6 +419,80 @@ Quedarse con una foto huérfana en el bucket cuesta centavos; dejar en el
 sistema una foto que la persona ya borró se lee como que el sistema no
 obedece.
 
+### D-22 · El saldo de stock y la suma de movimientos son dos números a propósito
+
+`stock.cantidad` guarda cuánto hay ahora; `movimiento_stock` guarda cada
+variación. Los dos dicen lo mismo, y esa redundancia es la decisión.
+
+Un sistema que solo guarda el saldo no puede darse cuenta de que se corrompió:
+el número está mal y nadie tiene contra qué compararlo hasta que alguien cuenta
+la mercadería a mano. Con las dos formas de calcularlo, `GET /stock/control`
+compara el saldo contra la suma y devuelve las prendas que no cuadran. Tiene
+que devolver siempre una lista vacía; si no la devuelve, hay un módulo tocando
+el stock sin pasar por `registrar_movimiento`.
+
+Es la diferencia con el precio (D-19), que **no** se copia a la variante: el
+precio es un estado —una fila vigente— y una copia solo agregaría algo que se
+desincroniza. El stock es una cuenta, y de una cuenta sí conviene tener el
+resultado guardado y poder rehacerla.
+
+`movimiento_stock` además guarda `cantidad_resultante`: cuánto quedó justo
+después de ese movimiento. Es una foto histórica, no una tercera copia del
+saldo: permite contestar cuánto había en una fecha sin sumar todo de nuevo y,
+sobre todo, permite encontrar **en qué movimiento** se rompió la cadena.
+
+### D-23 · Todo el stock del sistema pasa por un solo lugar
+
+`app/services/stock_service.py::registrar_movimiento` es la única función que
+toca `stock.cantidad`. La venta, el ingreso, el ajuste, la devolución, la
+transferencia y el conteo la llaman con su tipo.
+
+Mismo razonamiento que la auditoría automática (D-10): si cada módulo
+actualizara el saldo por su cuenta, alcanzaría con que uno se olvidara de
+escribir el movimiento para que el sistema quedara sin poder explicar un
+número. Y explicar el número es para lo que sirve.
+
+La fila de existencias se pide con `with_for_update()`. Dos cajas pueden
+vender la última unidad al mismo tiempo: sin el bloqueo, las dos leen 1, las
+dos restan, y el stock queda en 0 habiendo vendido dos prendas. En PostgreSQL
+emite `FOR UPDATE`; en SQLite —donde corren los tests— SQLAlchemy lo omite,
+porque ese motor bloquea la base entera de todos modos.
+
+### D-24 · El ajuste refleja algo que ya pasó, así que nunca se rechaza
+
+Vender sin existencias está bloqueado (D-8), pero un **ajuste** a la baja no.
+Si se contó menos de lo que el sistema creía, la prenda ya no está: rechazar el
+ajuste no la trae de vuelta, solo deja el sistema mintiendo con más
+convicción.
+
+Por eso `registrar_movimiento` acepta un `permitir_negativo` explícito además
+del parámetro global: el bloqueo es para lo que **está por pasar** (una venta),
+no para lo que ya pasó (un conteo).
+
+El motivo del ajuste es obligatorio. Un ajuste sin motivo es un número que
+nadie va a poder explicar dentro de tres meses, que es exactamente cuando se
+pregunta.
+
+### D-25 · Un mínimo en cero significa "no controlar", no "avisar siempre"
+
+La alerta de reposición se dispara cuando `cantidad <= stock_minimo` **y**
+`stock_minimo > 0`.
+
+Sin esa segunda condición, cada prenda agotada del catálogo aparecería en la
+pantalla de alertas, incluidas las de temporada pasada que ya no se reponen. La
+pantalla que se mira antes de hacer un pedido dejaría de servir para decidir un
+pedido, que es lo único para lo que está.
+
+### D-26 · El movimiento no se puede borrar, ni siquiera desde la API
+
+No hay endpoint de borrado de movimientos, y hay un test que lo comprueba: si
+algún día alguien agrega uno, ese test se pone en rojo y obliga a discutirlo.
+
+Un movimiento equivocado se corrige con **otro** movimiento, como en un libro
+contable. Editar el original dejaría el sistema sin poder contestar qué se
+creyó que había en cada momento, que es la mitad de para qué sirve tener
+movimientos.
+
 ---
 
 ## 8. Cómo se construye: en rodajas verticales
@@ -431,7 +505,7 @@ funcionando.
 |---|---|---|
 | 1 | Base: repo, CI, auth con roles, layout, auditoría automática, migraciones | **Hecha** (20/08/2026) |
 | 2 | Catálogo: productos, variantes, categorías, marcas, imágenes, precios | **Hecha** (20/08/2026) |
-| 3 | Stock: existencias por variante y sucursal, movimientos, ajustes, alertas de mínimo | Pendiente |
+| 3 | Stock: existencias por variante y sucursal, movimientos, ajustes, alertas de mínimo | **Hecha** (23/08/2026) |
 | 4 | POS: venta, medios de pago, caja abierta/cerrada, ticket en PDF | Pendiente |
 | 5 | Devoluciones y cambios | Pendiente |
 | 6 | Compras y proveedores, clientes y cuenta corriente, reportes, facturación, transferencias, conteos físicos | Pendiente |

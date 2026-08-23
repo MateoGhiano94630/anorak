@@ -144,3 +144,61 @@ export interface Precio {
   vigente_hasta: string | null
   motivo: string | null
 }
+
+// ── Existencias ───────────────────────────────────────────────────────────────
+
+export type TipoMovimiento =
+  | 'INGRESO'
+  | 'AJUSTE'
+  | 'VENTA'
+  | 'DEVOLUCION'
+  | 'TRANSFERENCIA_SALIDA'
+  | 'TRANSFERENCIA_ENTRADA'
+  | 'CONTEO'
+
+export type TipoDocumento =
+  'VENTA' | 'DEVOLUCION' | 'CAMBIO' | 'TRANSFERENCIA' | 'COMPRA' | 'CONTEO'
+
+export interface ExistenciaStock {
+  variante_id: string
+  sucursal_id: string
+  sucursal: string
+  producto_id: string
+  producto: string
+  talle: string
+  color: string
+  sku: string
+  cantidad: number
+  stock_minimo: number
+  bajo_minimo: boolean
+}
+
+export interface MovimientoStock {
+  id: string
+  variante_id: string
+  sucursal_id: string
+  sucursal: string
+  producto: string
+  talle: string
+  color: string
+  sku: string
+  tipo: TipoMovimiento
+  cantidad: number
+  cantidad_resultante: number
+  motivo: string | null
+  documento_tipo: TipoDocumento | null
+  documento_id: string | null
+  fecha: string
+  usuario_id: string | null
+}
+
+export interface DiferenciaControl {
+  variante_id: string
+  sucursal_id: string
+  producto: string
+  talle: string
+  color: string
+  sku: string
+  cantidad_guardada: number
+  cantidad_por_movimientos: number
+}

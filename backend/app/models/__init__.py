@@ -10,6 +10,12 @@ from app.models.base import AuditMixin, TimestampMixin, generate_uuid
 from app.models.catalogo import Categoria, Color, CurvaTalle, Marca, Talle
 from app.models.precio import Precio
 from app.models.producto import Genero, ImagenProducto, Producto, Temporada, Variante
+from app.models.stock import (
+    MovimientoStock,
+    Stock,
+    TipoDocumento,
+    TipoMovimiento,
+)
 from app.models.sucursal import Sucursal, TipoSucursal
 from app.models.usuario import RolUsuario, Usuario
 
@@ -22,14 +28,18 @@ __all__ = [
     "Genero",
     "ImagenProducto",
     "Marca",
+    "MovimientoStock",
     "OperacionAudit",
     "Precio",
     "Producto",
     "RolUsuario",
+    "Stock",
     "Sucursal",
     "Talle",
     "Temporada",
     "TimestampMixin",
+    "TipoDocumento",
+    "TipoMovimiento",
     "TipoSucursal",
     "Usuario",
     "Variante",

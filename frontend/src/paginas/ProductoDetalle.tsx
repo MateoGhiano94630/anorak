@@ -15,7 +15,14 @@ import { useCategorias, useColores, useCurvas } from '../lib/catalogos'
 import { formatearPesos } from '../lib/dinero'
 import { formatearFechaHora } from '../lib/fecha'
 import { NOMBRE_GENERO, NOMBRE_TEMPORADA } from '../lib/etiquetas'
-import type { ImagenProducto, Precio, Producto, Variante } from '../lib/tipos'
+import { totalPorVariante } from '../lib/stock'
+import type {
+  ExistenciaStock,
+  ImagenProducto,
+  Precio,
+  Producto,
+  Variante,
+} from '../lib/tipos'
 
 function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
@@ -47,6 +54,13 @@ export function ProductoDetalle() {
   const producto = useQuery({
     queryKey: ['producto', productoId],
     queryFn: () => pedir<Producto>(`/productos/${productoId}`),
+  })
+
+  // Las existencias de todos los talles de una vez. Es la pregunta más
+  // frecuente del mostrador: "¿la tenés en M?".
+  const existencias = useQuery({
+    queryKey: ['stock', 'producto', productoId],
+    queryFn: () => pedir<ExistenciaStock[]>(`/stock?producto_id=${productoId}`),
   })
 
   function refrescar(): void {
@@ -114,6 +128,7 @@ export function ProductoDetalle() {
   }
 
   const datos = producto.data
+  const hayPorVariante = totalPorVariante(existencias.data ?? [])
   const categoria = (categorias.data ?? []).find((c) => c.id === datos.categoria_id)
   const curva = (curvas.data ?? []).find((c) => c.id === categoria?.curva_talle_id)
 
@@ -136,6 +151,15 @@ export function ProductoDetalle() {
       ),
     },
     { clave: 'sku', titulo: 'Código', valor: (v) => v.sku },
+    {
+      clave: 'stock',
+      titulo: 'Hay',
+      alDerecha: true,
+      valor: (v) => {
+        const cantidad = hayPorVariante.get(v.id) ?? 0
+        return <span className={cantidad === 0 ? 'text-slate-500' : ''}>{cantidad}</span>
+      },
+    },
     {
       clave: 'barras',
       titulo: 'Código de barras',

@@ -19,6 +19,9 @@ nav:
       - El catálogo: catalogo.md
       - Una prenda por dentro: prenda.md
       - Marcas, colores y categorías: marcas-y-talles.md
+  - Mercadería:
+      - Existencias: existencias.md
+      - Movimientos: movimientos.md
   - Administración:
       - Usuarios: usuarios.md
       - Sucursales: sucursales.md

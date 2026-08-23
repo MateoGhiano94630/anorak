@@ -247,6 +247,85 @@ export const AYUDA = {
       },
     ],
   },
+  existencias: {
+    titulo: 'Existencias',
+    resumen: 'Cuánto hay de cada prenda en cada local, y qué se está por acabar.',
+    preguntas: [
+      {
+        pregunta: '¿Cuál es la diferencia entre cargar mercadería y ajustar?',
+        respuesta:
+          'Cargar es para lo que llegó al local: sumás las unidades que entraron. ' +
+          'Ajustar es para cuando contaste y no coincide: escribís cuánto hay de ' +
+          'verdad y el sistema guarda la diferencia. Los dos quedan registrados, ' +
+          'pero se leen distinto en el historial.',
+      },
+      {
+        pregunta: '¿Por qué me pide un motivo para ajustar?',
+        respuesta:
+          'Porque dentro de tres meses, un número que cambió sin explicación no lo ' +
+          'va a poder justificar nadie. Con "se mojaron dos" o "conteo del lunes" ' +
+          'alcanza; lo importante es que quede escrito.',
+      },
+      {
+        pregunta: 'Una prenda no aparece en la lista.',
+        respuesta:
+          'Las prendas aparecen acá recién cuando entra la primera unidad al local. ' +
+          'Una prenda del catálogo que nunca se cargó no tiene existencias todavía: ' +
+          'usá "Cargar mercadería" y aparece.',
+      },
+      {
+        pregunta: '¿Qué es el mínimo?',
+        respuesta:
+          'El punto en el que conviene reponer. Cuando la cantidad llega a ese ' +
+          'número o baja, la prenda aparece en las alertas, así te enterás mientras ' +
+          'todavía queda algo para vender. Con el mínimo en cero, esa prenda no se ' +
+          'controla.',
+      },
+      {
+        pregunta: '¿Se puede vender algo que no tiene existencias?',
+        respuesta:
+          'No. El sistema lo frena. Es una decisión del local: prefiere avisar que ' +
+          'no hay antes que dejar un número en negativo que después nadie entiende. ' +
+          'Si de verdad hay una prenda que el sistema no registra, cargala primero ' +
+          'y vendela después.',
+      },
+      {
+        pregunta: 'El mismo modelo aparece dos veces con distinta cantidad.',
+        respuesta:
+          'Fijate el talle y el color: son dos prendas distintas para el sistema, ' +
+          'y cada una tiene sus propias unidades. Si además tenés más de un local, ' +
+          'cada local lleva las suyas.',
+      },
+    ],
+  },
+  movimientos: {
+    titulo: 'Movimientos',
+    resumen: 'Todo lo que entró y salió, con quién lo hizo y cuándo.',
+    preguntas: [
+      {
+        pregunta: '¿Puedo borrar un movimiento que cargué mal?',
+        respuesta:
+          'No, y es a propósito. Un movimiento es algo que pasó: si se borrara, el ' +
+          'sistema quedaría sin poder explicar de dónde salió un número. Lo que se ' +
+          'hace es corregirlo con otro movimiento, igual que en un cuaderno de ' +
+          'cuentas: se anota la corrección, no se tacha lo anterior.',
+      },
+      {
+        pregunta: '¿Qué quiere decir la columna "quedó"?',
+        respuesta:
+          'Cuántas unidades había justo después de ese movimiento. Sirve para ' +
+          'seguir la historia de una prenda de arriba hacia abajo y ver en qué ' +
+          'momento pasó algo raro.',
+      },
+      {
+        pregunta: 'Los números tienen signo más y menos.',
+        respuesta:
+          'El más es lo que entró y el menos lo que salió. Sumando toda la columna ' +
+          'de una prenda tiene que dar exactamente lo que dice la pantalla de ' +
+          'existencias. Si no diera, el sistema lo detecta solo y avisa.',
+      },
+    ],
+  },
 } as const satisfies Record<string, AyudaPantalla>
 
 /** Los nombres de pantalla que tienen ayuda escrita. */

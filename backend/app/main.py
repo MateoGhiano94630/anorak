@@ -19,6 +19,7 @@ from app.api.catalogo import (
 from app.api.precios import router as precios_router
 from app.api.productos import router as productos_router
 from app.api.productos import variantes_router
+from app.api.stock import router as stock_router
 from app.api.sucursales import router as sucursales_router
 from app.api.usuarios import router as usuarios_router
 from app.core import (
@@ -82,6 +83,7 @@ app.include_router(categorias_router)
 app.include_router(productos_router)
 app.include_router(variantes_router)
 app.include_router(precios_router)
+app.include_router(stock_router)
 app.include_router(audit_log_router)
 
 

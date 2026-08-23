@@ -63,7 +63,31 @@ Formato de fechas: dd/mm/aaaa.
 
 ## Stock
 
-Sin cambios todavía. Entra en la tanda 3.
+### 23/08/2026 — tanda 3
+
+**Agregado**
+
+- Existencias por prenda y por local: cada talle y color lleva sus propias
+  unidades en cada sucursal.
+- Carga de mercadería que llega, buscando la prenda por su código —el interno
+  o el de barras—, que es lo que hay a mano cuando llega el pedido.
+- Corrección por conteo: se escribe cuánto hay de verdad y el sistema guarda
+  la diferencia, con el motivo. Contar y que dé lo mismo no genera nada.
+- Punto de reposición por prenda y local, con la lista de lo que hay que
+  reponer. Con el mínimo en cero, esa prenda no se controla.
+- Historial de movimientos con qué pasó, cuántas unidades, cuánto quedó, quién
+  lo hizo y cuándo. Filtros por local y por tipo.
+- En la pantalla de una prenda se ve cuánto hay de cada talle, sumando todos
+  los locales.
+- Control interno que compara el saldo guardado contra la suma de los
+  movimientos y avisa si alguna prenda dejó de cuadrar.
+
+**Decidido**
+
+- Los movimientos no se borran. Una carga equivocada se corrige con otro
+  movimiento, como en un cuaderno de cuentas.
+- Un ajuste a la baja nunca se rechaza: si se contó menos, la prenda ya no
+  está.
 
 ## Punto de venta y caja
 
