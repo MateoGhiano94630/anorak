@@ -4,7 +4,7 @@ Qué está hecho, qué está a medias y qué falta. Este archivo se actualiza al
 cerrar cada tanda, y dice la verdad aunque sea incómoda: un "listo" que no lo
 está cuesta más caro que un pendiente anotado.
 
-**Última actualización**: 24/08/2026 — limpieza de los módulos de negocio.
+**Última actualización**: 24/08/2026 — módulo de caja.
 
 ---
 
@@ -12,12 +12,12 @@ está cuesta más caro que un pendiente anotado.
 
 | | |
 |---|---|
-| Estado | Base funcionando. Alcance de negocio **por definir** |
-| Última tanda cerrada | 1 (base: ingreso, usuarios, auditoría) |
-| Próxima | A definir con el análisis nuevo |
-| Tests backend | 31, todos en verde |
-| Tests frontend | 13 unitarios + 3 de punta a punta (por 2 dispositivos) |
-| Migraciones | 1, aplicada. Sin pendientes |
+| Estado | Base + caja funcionando |
+| Última tanda cerrada | 2 (caja) |
+| Próxima | A definir. La caja dejó puesto el gancho para el punto de venta |
+| Tests backend | 65, todos en verde |
+| Tests frontend | 18 unitarios + 3 de punta a punta (por 2 dispositivos) |
+| Migraciones | 2, aplicadas. Sin pendientes |
 | CI | Escrito y completo. **Todavía no corrió en GitHub**: el repositorio es local |
 | Despliegue | **No desplegado.** Ni Railway ni Cloudflare Pages están configurados |
 
@@ -66,23 +66,49 @@ no existe.
 - **Chequeo de esquema** al arrancar, que loguea ERROR si la base no está al
   día sin frenar el arranque.
 
+### Backend — caja (tanda 2)
+
+- **Medios de pago** con su tipo, si entra al cajón, comisión y días de
+  acreditación. El seed carga efectivo, débito, crédito, QR y transferencia.
+- **Una sesión por jornada.** No se abre otra mientras haya una abierta, y el
+  mensaje dice quién la abrió y cuándo.
+- **Un solo punto de escritura**: `caja_service.registrar_movimiento()`. Una
+  salida que dejaría el cajón en negativo se rechaza sin revelar cuánto hay.
+- **Movimientos inmutables**, con número de renglón propio por sesión: el
+  orden no puede salir de `created_at` (ver D-14).
+- **Arqueo a ciegas**: mientras la caja está abierta la API no informa el
+  efectivo esperado, ni en la sesión, ni en los totales, ni en los mensajes de
+  error. El cierre lo revela después de declarar lo contado.
+- **Cierre** que congela declarado, esperado y diferencia, anota la diferencia
+  como movimiento y retira lo que sobra del fondo. Al terminar, la suma de los
+  movimientos en efectivo es exactamente el fondo que quedó.
+- **Historial de cierres** para encargado y administrador.
+
 ### Frontend
 
 - **Ingreso** con el token en memoria. Al recargar la pestaña hay que volver a
   entrar, y la ayuda de la pantalla lo explica.
 - **Marco general**: menú filtrado por puesto, columna a la izquierda en
   pantalla ancha y fila deslizable en el celular.
-- **Pantallas**: Inicio y Usuarios.
+- **Pantallas**: Inicio, Caja, Cierres de caja, Medios de pago y Usuarios.
 - **Componentes base**: `<Listado>` (tabla en pantalla ancha, tarjetas en
   angosta, desde una sola definición de columnas), `<CampoFecha>` (dd/mm/aaaa,
   sin `<input type="date">`), `<Campo>`, `<Selector>`, `<Boton>`, `<Ayuda>`.
 - **Bibliotecas propias**: `lib/fecha.ts`, `lib/dinero.ts`, `lib/api.ts`,
-  `lib/sesion.ts`, `lib/ayuda.ts`, `lib/etiquetas.ts`, `lib/tipos.ts`.
+  `lib/sesion.ts`, `lib/ayuda.ts`, `lib/etiquetas.ts`, `lib/tipos.ts`,
+  `lib/importes.ts`.
 
-Probado a mano el 24/08/2026, después de la limpieza: ingreso con la cuenta
-del seed, alta de usuario desde la API, y lectura del registro de auditoría
-distinguiendo lo que escribió el sistema (sin usuario) de lo que escribió una
-persona.
+Probado a mano el 24/08/2026, dos veces:
+
+1. Contra la API, después de la limpieza: ingreso con la cuenta del seed, alta
+   de usuario, y lectura del registro de auditoría distinguiendo lo que
+   escribió el sistema de lo que escribió una persona.
+2. En un navegador real, con el frontend contra la API: apertura con el fondo
+   sugerido, verificación de que en ninguna parte de la pantalla aparece el
+   efectivo esperado, un ingreso, un gasto con comprobante, un retiro excesivo
+   rechazado sin revelar el saldo, un cierre rechazado por no explicar la
+   diferencia, y el cierre final revelando 61.500 esperado contra 61.000
+   contado. Sin errores de consola más allá de los rechazos buscados.
 
 ---
 
@@ -90,7 +116,7 @@ persona.
 
 | # | Pendiente | Cuándo |
 |---|---|---|
-| P-1 | **El alcance de negocio está sin definir.** Es lo que bloquea todo lo demás | Antes de la próxima tanda |
+| P-1 | La caja no cobra ventas: el punto de venta no existe. Por ahora funciona como libro de caja, y el gancho para el cobro está puesto | Próxima tanda |
 | P-2 | El repositorio es local: no hay remoto en GitHub, así que el CI nunca corrió | Antes de la próxima tanda |
 | P-3 | Nada está desplegado. Falta crear el proyecto en Railway (con la URL del Session Pooler de Supabase) y en Cloudflare Pages | Cuando haya algo que mostrar |
 | P-4 | `pre-commit install` no se corrió en la máquina de desarrollo | Antes del primer commit compartido |
@@ -98,6 +124,8 @@ persona.
 | P-6 | La facturación está apagada (`ARCA_HABILITADO=false`) y sin certificados | Cuando el dueño los tenga |
 | P-7 | Los tests de punta a punta del CI no levantan el backend, así que prueban el frontend solo | Evaluar un trabajo de CI que levante los dos |
 | P-8 | La configuración de ARCA y R2 quedó declarada pero sin consumidor. `boto3`, `weasyprint`, `pillow` y `qrcode` siguen en las dependencias porque son parte del stack elegido | Se usan cuando vuelva a haber un módulo que los necesite |
+| P-9 | La comisión y los días de acreditación de los medios de pago están vacíos: los tiene que cargar el dueño con los números de su contrato | Antes de conciliar contra el resumen del procesador |
+| P-10 | No hay comprobante de cierre en PDF. Hoy el arqueo se ve en pantalla y queda en el historial | Cuando haga falta imprimirlo |
 
 ---
 
@@ -122,6 +150,14 @@ persona.
   permisos darían verde sin probar nada.
 - **Una columna que puede quedar nula no protege una restricción de
   unicidad**: PostgreSQL considera distintos entre sí a dos nulos.
+- **Ningún módulo escribe en `movimiento_caja` por su cuenta.** Todo pasa por
+  `caja_service.registrar_movimiento()` (D-17).
+- **No ordenar por `created_at` cuando el orden importa.** En PostgreSQL es la
+  hora de inicio de la transacción y en SQLite tiene precisión de segundos
+  (D-14).
+- **El arqueo ciego vive en la API, no en la pantalla.** Si algún endpoint
+  empieza a devolver el efectivo esperado de una sesión abierta, el control se
+  perdió aunque el frontend no lo muestre (D-12).
 
 ---
 

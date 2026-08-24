@@ -11,9 +11,12 @@ entiende, es un problema del manual y hay que corregirlo.
 El sistema se está armando por etapas. Hoy están listas:
 
 - **Entrar al sistema** con tu correo y tu contraseña.
+- **La caja**: abrirla al llegar, anotar lo que entra y sale, y cerrarla al
+  irse contando lo que quedó.
+- **Medios de pago**: con qué se puede cobrar.
 - **Usuarios**: quién puede entrar y qué puede hacer cada uno.
 
-Las partes del día a día del local se suman en las próximas etapas.
+El resto del día a día del local se suma en las próximas etapas.
 
 ## En qué se puede usar
 

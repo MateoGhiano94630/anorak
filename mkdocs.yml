@@ -15,7 +15,12 @@ theme:
 nav:
   - Presentación: index.md
   - Entrar al sistema: entrar.md
-  - Usuarios: usuarios.md
+  - Caja:
+      - La caja: caja.md
+      - Cerrar la caja: cierre-de-caja.md
+  - Administración:
+      - Medios de pago: medios-pago.md
+      - Usuarios: usuarios.md
 markdown_extensions:
   - admonition
   - attr_list

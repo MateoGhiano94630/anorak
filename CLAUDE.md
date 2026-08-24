@@ -54,6 +54,8 @@ Cada una viene de un error ya pagado. No se discuten, se aplican.
 | `FlexibleJSON` propio (`JSONB` con variante `sqlite`) | Mismo motivo |
 | `enum_texto()` para columnas de enum, nunca `String` pelado con `Mapped[MiEnum]` | Con `String`, la fila leída de la base vuelve como `str` y cualquier `.value` explota en producción |
 | Los servicios externos (ARCA, R2) se mockean con fixtures **automáticas** en `conftest.py` | Si hubiera que acordarse de pedirlas, el día que alguien escriba un test sin pedirla la suite sube archivos a un bucket real |
+| Todo movimiento de caja pasa por `caja_service.registrar_movimiento()` | Si cada módulo anotara por su cuenta, alcanzaría con que uno se olvide para que el arqueo quede sin explicación |
+| **Nunca** ordenar filas por `created_at` cuando el orden importa | En PostgreSQL `CURRENT_TIMESTAMP` es la hora de inicio de la transacción y en SQLite tiene precisión de segundos: el orden queda indeterminado. Va una columna de orden propia |
 | `StrEnum`, nunca `(str, Enum)` | |
 | Toda la plata en `Numeric`/`Decimal`. **Jamás float** | Un centavo mal redondeado en un cierre de caja es una hora de alguien buscándolo |
 | Type hints en todas las funciones, docstring en las públicas | `mypy --strict` tiene que pasar |
@@ -86,15 +88,27 @@ Cada una viene de un error ya pagado. No se discuten, se aplican.
 
 ## Estado del alcance
 
-El 24/08/2026 se retiraron todos los módulos de negocio (catálogo, precios,
-stock y sucursales): el análisis del que salieron era equivocado. Hoy el
-sistema tiene **ingreso, usuarios y auditoría**, y nada más.
+El 24/08/2026 se retiraron los módulos que venían de un análisis equivocado
+(catálogo, precios, stock y sucursales) y se empezó de nuevo por la **caja**.
+Hoy el sistema tiene ingreso, usuarios, auditoría y caja.
 
-El alcance nuevo está por definirse. Hasta que esté, no hay decisiones de
-modelado de negocio vigentes: las que había están en el historial de git y
-resumidas, con lo que se aprendió de cada una, en `docs/arquitectura.md` §6.
+Lo retirado está en el historial de git y resumido, con lo que se aprendió de
+cada decisión, en `docs/arquitectura.md` §7.
 
-Lo que sí sigue vigente:
+### Decisiones de la caja (24/08/2026)
+
+| Pregunta | Respuesta |
+|---|---|
+| Sesión de caja | Una por jornada, del puesto. La abre quien llega y cobran todos sobre el mismo cajón |
+| Puntos de cobro | Uno solo, y no se esperan más. No se modela como entidad |
+| Arqueo | **A ciegas**: el esperado no se informa hasta que se declara lo contado |
+| Fondo al cerrar | Queda el fondo fijo (`FONDO_FIJO_SUGERIDO`) y se retira el resto |
+| Quién abre y cierra | El vendedor. El encargado revisa los cierres después |
+| Retiros y gastos | Existen los dos y los hace cualquiera, siempre con motivo |
+| Diferencia de arqueo | Se registra y deja cerrar, pidiendo motivo. **Nunca se corrige** |
+| Medios de pago | Efectivo, débito, crédito, QR y transferencia. Solo el efectivo entra al cajón |
+
+Lo que sigue vigente del contexto:
 
 - El negocio es un local de ropa en Argentina: facturación contra ARCA, moneda
   en pesos, fechas en dd/mm/aaaa.
@@ -114,6 +128,8 @@ Lo que sí sigue vigente:
 | `client_admin` y `client_vendedor` eran el **mismo** cliente HTTP con el header pisado: un test que pedía los dos recibía el último resuelto, y los tests de permisos daban verde sin probar nada | Cada fixture de cliente abre el suyo (`_abrir_cliente` en `tests/conftest.py`) |
 | Una columna que puede quedar nula dentro de una restricción de unicidad no la protege | PostgreSQL considera distintos entre sí a dos nulos. Si una columna forma parte de un índice único, no puede aceptar nulos |
 | El `ultimo_ingreso` del login se guardaba de rebote, porque una consulta posterior disparaba el flush automático. Al sacar esa consulta dejó de escribirse | `await db.flush()` explícito en `login`. Un dato que se guarda o no según qué otra cosa pase después no puede quedar librado al azar |
+| Ordenar los movimientos de caja por `created_at` daba un orden indeterminado: PostgreSQL devuelve la hora de inicio de la transacción y SQLite tiene precisión de segundos | Columna `numero` propia por sesión, con índice único |
+| Una consulta que vuelve a leer una fila ya cargada devuelve el objeto de la caché de identidad **sin** recargar sus colecciones. El endpoint respondía con un movimiento menos del que acababa de crear | `.execution_options(populate_existing=True)` cuando hace falta el estado fresco |
 
 ## Documentación
 

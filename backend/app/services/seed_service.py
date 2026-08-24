@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import PASSWORD_SEED_POR_DEFECTO, settings
 from app.core.security import hash_password
+from app.models.caja import MedioPago, TipoMedioPago
 from app.models.usuario import RolUsuario, Usuario
 
 logger = logging.getLogger(__name__)
@@ -20,9 +21,24 @@ logger = logging.getLogger(__name__)
 # cuenta del seed queda creada pero no puede iniciar sesión nunca.
 EMAIL_ADMIN_INICIAL = "admin@anorak.com.ar"
 
+# Los medios con los que cobra el local. Se cargan al arrancar porque sin al
+# menos el efectivo la caja no puede abrirse: la apertura es un movimiento y
+# todo movimiento tiene un medio.
+#
+# La comisión y los días de acreditación quedan en blanco a propósito: los
+# pone el dueño con los números de su contrato, y un valor inventado acá
+# terminaría en un reporte de rentabilidad como si fuera real.
+MEDIOS_INICIALES: list[tuple[str, TipoMedioPago, bool]] = [
+    ("Efectivo", TipoMedioPago.efectivo, True),
+    ("Débito", TipoMedioPago.tarjeta_debito, False),
+    ("Crédito", TipoMedioPago.tarjeta_credito, False),
+    ("QR / billetera", TipoMedioPago.qr, False),
+    ("Transferencia", TipoMedioPago.transferencia, False),
+]
+
 
 async def seed_inicial(db: AsyncSession) -> None:
-    """Crea la cuenta de administrador si falta."""
+    """Crea la cuenta de administrador y los medios de pago si faltan."""
     resultado = await db.execute(
         select(Usuario).where(Usuario.email == EMAIL_ADMIN_INICIAL)
     )
@@ -37,6 +53,22 @@ async def seed_inicial(db: AsyncSession) -> None:
             )
         )
         logger.info("Cuenta de administrador creada: %s", EMAIL_ADMIN_INICIAL)
+
+    for orden, (nombre, tipo, afecta_efectivo) in enumerate(MEDIOS_INICIALES):
+        existente = await db.execute(
+            select(MedioPago).where(MedioPago.nombre == nombre)
+        )
+        if existente.scalar_one_or_none() is None:
+            db.add(
+                MedioPago(
+                    nombre=nombre,
+                    tipo=tipo,
+                    afecta_efectivo=afecta_efectivo,
+                    orden=orden,
+                    activo=True,
+                )
+            )
+            logger.info("Medio de pago creado: %s", nombre)
 
     await db.commit()
 

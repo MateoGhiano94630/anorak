@@ -5,7 +5,7 @@
  * un valor guardado, "Administrador" es lo que va en la pantalla.
  */
 
-import type { Rol } from './tipos'
+import type { Rol, TipoMedioPago, TipoMovimientoCaja } from './tipos'
 
 export const NOMBRE_ROL: Record<Rol, string> = {
   ADMIN: 'Administrador',
@@ -21,4 +21,36 @@ export function opcionesDe<T extends string>(
     valor,
     texto: texto as string,
   }))
+}
+
+/**
+ * Cómo se nombra cada movimiento de caja en pantalla.
+ *
+ * "Mercadería que llegó" y no "INGRESO": quien atiende el local no tiene por
+ * qué traducir la palabra que el sistema guarda.
+ */
+export const NOMBRE_MOVIMIENTO_CAJA: Record<TipoMovimientoCaja, string> = {
+  APERTURA: 'Fondo de apertura',
+  COBRO: 'Cobro de una venta',
+  INGRESO: 'Plata que se agregó',
+  RETIRO: 'Plata que se sacó',
+  GASTO: 'Gasto pagado de la caja',
+  DEVOLUCION: 'Devolución',
+  DIFERENCIA: 'Diferencia del arqueo',
+  CIERRE: 'Retiro del cierre',
+}
+
+/** Los tres movimientos que una persona carga a mano. */
+export const MOVIMIENTOS_A_MANO = {
+  INGRESO: 'Agregar plata a la caja',
+  RETIRO: 'Sacar plata de la caja',
+  GASTO: 'Pagar un gasto de la caja',
+} as const
+
+export const NOMBRE_MEDIO_PAGO: Record<TipoMedioPago, string> = {
+  EFECTIVO: 'Efectivo',
+  TARJETA_DEBITO: 'Tarjeta de débito',
+  TARJETA_CREDITO: 'Tarjeta de crédito',
+  QR: 'QR o billetera',
+  TRANSFERENCIA: 'Transferencia',
 }

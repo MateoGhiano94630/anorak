@@ -15,6 +15,24 @@ interface Acceso {
 
 const ACCESOS: Acceso[] = [
   {
+    ruta: '/caja',
+    titulo: 'Caja',
+    detalle: 'Abrirla al llegar, registrar lo que entra y sale, cerrarla al irse.',
+    roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'],
+  },
+  {
+    ruta: '/caja/cierres',
+    titulo: 'Cierres de caja',
+    detalle: 'Todos los arqueos juntos, con sus diferencias.',
+    roles: ['ADMIN', 'ENCARGADO'],
+  },
+  {
+    ruta: '/medios-pago',
+    titulo: 'Medios de pago',
+    detalle: 'Con qué se puede cobrar y qué pasa con cada uno.',
+    roles: ['ADMIN'],
+  },
+  {
     ruta: '/usuarios',
     titulo: 'Usuarios',
     detalle: 'Quién entra al sistema y qué puede hacer.',

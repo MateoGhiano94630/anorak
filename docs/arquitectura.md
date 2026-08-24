@@ -5,13 +5,12 @@ hace; lo que no se puede leer del código es qué alternativa se descartó y a
 cambio de qué. Cuando una regla cambie, se actualiza el razonamiento acá, no
 solo el código.
 
-Última revisión: 24/08/2026.
+Última revisión: 24/08/2026 (módulo de caja).
 
-> **Estado.** El 24/08/2026 se quitaron todos los módulos de negocio: el
-> análisis del que salieron era equivocado. Quedan el ingreso al sistema, los
-> usuarios, la auditoría automática y los componentes base. Lo que se sacó
-> está en la sección 6, para que el análisis nuevo sepa qué se probó y por qué
-> se hizo así. Nada de eso se perdió: está en el historial de git.
+> **Estado.** El 24/08/2026 se quitaron todos los módulos de negocio que
+> venían de un análisis equivocado, y el mismo día se empezó de nuevo por la
+> **caja**. Lo que se sacó está en la sección 7, para que no se vuelva a
+> chocar con lo mismo. Nada se perdió: está en el historial de git.
 
 ---
 
@@ -168,7 +167,126 @@ sí es seguro es que el UUID no cuesta nada aunque el requisito cambie.
 
 ---
 
-## 4. Cómo se construye: en rodajas verticales
+## 4. La caja
+
+La caja es el primer módulo de negocio del sistema. Es el contenedor: una
+**sesión** va desde que alguien la abre hasta que la cierra, y todo lo demás
+—los cobros, los retiros, los gastos y el arqueo— cuelga de ella.
+
+Hoy no cobra ventas, porque el punto de venta todavía no existe. Hasta
+entonces funciona como un libro de caja, que ya es usable tal cual. El gancho
+por donde va a entrar el cobro de una venta está puesto: `movimiento_caja`
+tiene un par de columnas que apuntan al documento que lo originó, sin clave
+foránea porque apuntan a tablas distintas según el tipo.
+
+### D-10 · La sesión de caja es del puesto, no de la persona
+
+Hay una sesión por jornada: la abre quien llega primero y cobran todos sobre
+el mismo cajón. Es lo que refleja un mostrador con un solo cajón compartido.
+
+**Lo que se resigna, y está aceptado**: una diferencia de arqueo no tiene
+dueño, porque durante el día cobraron varios. Lo que sí queda atribuido es
+cada movimiento individual —quién hizo cada retiro, cada gasto— más quién
+abrió y quién cerró. Alcanza para investigar una diferencia; no para
+adjudicarla sola.
+
+**Alternativa descartada**: una sesión por vendedor. Solo tiene sentido si
+cada uno tiene su propio cajón; si comparten uno, dos sesiones abiertas sobre
+la misma plata dan dos arqueos que no pueden cerrar los dos.
+
+### D-11 · El arqueo se congela al cerrar
+
+`efectivo_declarado`, `efectivo_esperado` y `diferencia` se guardan como
+columnas y no se recalculan nunca.
+
+Un arqueo es un documento: dice qué se contó y qué creía el sistema **en ese
+momento**. Si el esperado se recalculara, cualquier corrección posterior
+cambiaría la historia y la diferencia dejaría de coincidir con la que la
+persona vio al cerrar.
+
+Es el mismo criterio que hace que una línea de venta guarde el precio con el
+que se vendió, y el opuesto al del saldo de una cuenta, que sí conviene poder
+rehacer.
+
+### D-12 · El arqueo es a ciegas
+
+Mientras la caja está abierta, la API **no informa** el efectivo esperado: no
+viene en la sesión, no aparece en los totales por medio de pago, y ni siquiera
+el error de "no hay tanto efectivo" dice cuánto hay. Recién al declarar lo
+contado, el cierre revela el esperado y la diferencia.
+
+Si el sistema mostrara el número antes, la tentación es tipearlo y el arqueo
+deja de medir nada.
+
+**El límite, dicho de frente**: los movimientos del día sí se ven, con sus
+importes, así que quien quiera sumarlos puede. Esconderlos también volvería la
+pantalla inútil para trabajar. Esto es **fricción, no un candado**: sirve para
+que el número no se copie por inercia, no para impedir que alguien decidido lo
+calcule.
+
+### D-13 · La diferencia del arqueo se anota como movimiento
+
+Al cerrar, si lo contado no coincide, la diferencia entra como un movimiento
+más antes del retiro final.
+
+Sin eso, el libro quedaría diciendo una cosa y el cajón otra: la suma de los
+movimientos daría el esperado y en el cajón habría lo contado. Con la
+diferencia anotada, al terminar el cierre **la suma de los movimientos en
+efectivo es exactamente el fondo que quedó**. Es un invariante comprobable, y
+hay un test que lo comprueba.
+
+### D-14 · Los movimientos llevan número de renglón propio
+
+`movimiento_caja.numero` es 1, 2, 3 dentro de la sesión, con índice único.
+
+No se ordenan por `created_at` porque ese orden es indeterminado en los dos
+motores: en SQLite `CURRENT_TIMESTAMP` tiene precisión de segundos, y en
+PostgreSQL devuelve la hora de **inicio de la transacción**, así que todo lo
+escrito en el mismo flush queda con el mismo valor. Un libro de caja se lee en
+orden; el orden no puede depender de eso.
+
+La restricción de unicidad es la red: si dos personas cargan un movimiento en
+el mismo instante sobre la misma caja, la segunda falla en vez de quedar con
+un renglón repetido y un orden inventado.
+
+### D-15 · El fondo fijo queda en el cajón
+
+Al cerrar se retira lo que sobra de un fondo fijo, y ese retiro se anota como
+movimiento. Así la apertura del día siguiente es siempre el mismo número, y el
+día que no lo sea, se nota.
+
+El fondo vive en `FONDO_FIJO_SUGERIDO`: la apertura lo propone y quien abre
+puede corregirlo. Va como parámetro y no clavado en el código para que
+cambiarlo sea una variable de entorno.
+
+### D-16 · No se modeló el punto de cobro como entidad
+
+Hay un solo cajón y no se esperan más, así que la sesión es la entidad de más
+arriba.
+
+**Por qué esta omisión no compra deuda**, a diferencia de la de sucursales que
+se descartó con el análisis viejo: si mañana aparece un segundo cajón, todas
+las sesiones históricas pertenecieron al primero y el relleno es unívoco. Con
+el stock por sucursal no era así — había que inventar a qué local perteneció
+cada movimiento.
+
+### D-17 · Todo peso que entra o sale pasa por un solo lugar
+
+`caja_service.registrar_movimiento` es la única función que escribe en
+`movimiento_caja`. La apertura, el cierre, los movimientos a mano y —cuando
+exista— el cobro de una venta la llaman con su tipo.
+
+Mismo razonamiento que la auditoría automática (D-2): si cada módulo anotara
+por su cuenta, alcanzaría con que uno se olvide para que el arqueo quede sin
+explicación.
+
+Una salida que dejaría el cajón en negativo se rechaza: es una acción que está
+por pasar. La diferencia del arqueo, en cambio, nunca se rechaza, porque
+refleja algo que ya pasó y frenarla no trae la plata de vuelta.
+
+---
+
+## 5. Cómo se construye: en rodajas verticales
 
 No se hace el modelo completo de todos los módulos y después las pantallas. Se
 hace de punta a punta, tanda por tanda, y cada tanda deja el sistema
@@ -180,11 +298,12 @@ no ruido de fondo, y no se avanza con el CI roto.
 | # | Tanda | Estado |
 |---|---|---|
 | 1 | Base: repo, CI, ingreso con roles, marco de pantallas, auditoría automática, migraciones | **Hecha** |
-| 2+ | A definir con el análisis nuevo | Pendiente |
+| 2 | Caja: medios de pago, apertura, movimientos, arqueo ciego y cierre | **Hecha** (24/08/2026) |
+| 3+ | A definir | Pendiente |
 
 ---
 
-## 5. Endurecimiento operativo
+## 6. Endurecimiento operativo
 
 Medidas que ya están puestas, heredadas de incidentes reales en otro sistema
 con el mismo stack:
@@ -207,7 +326,7 @@ La URL directa resuelve solo a IPv6 y Railway sale por IPv4: falla con
 
 ---
 
-## 6. Lo que se quitó el 24/08/2026, y qué se aprendió
+## 7. Lo que se quitó el 24/08/2026, y qué se aprendió
 
 Se construyeron y se retiraron tres módulos —catálogo, precios y stock— más
 las sucursales. El código está en el historial de git (commits `Tanda 2` y

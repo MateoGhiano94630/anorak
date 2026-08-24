@@ -1,5 +1,7 @@
 """Configuración del sistema, leída del entorno o de backend/.env."""
 
+from decimal import Decimal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Contraseña de fábrica de las cuentas del seed. Si sigue siendo esta, el
@@ -35,6 +37,12 @@ class Settings(BaseSettings):
     # Contraseña inicial de las cuentas creadas por el seed. Definirla en
     # Railway para no dejar la de fábrica.
     seed_password: str = PASSWORD_SEED_POR_DEFECTO
+
+    # ── Caja ─────────────────────────────────────────────────────────────────
+    # El fondo que queda en el cajón para dar vuelto. La apertura lo propone y
+    # quien abre puede corregirlo. Va como parámetro y no clavado en el código
+    # para que cambiarlo sea una variable de entorno.
+    fondo_fijo_sugerido: Decimal = Decimal("20000.00")
 
     # ── Facturación electrónica ──────────────────────────────────────────────
     # Apagada hasta tener los certificados. Con esto en false el servicio de

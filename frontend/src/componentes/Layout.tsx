@@ -21,6 +21,9 @@ interface OpcionMenu {
 
 const MENU: OpcionMenu[] = [
   { ruta: '/', texto: 'Inicio', roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'] },
+  { ruta: '/caja', texto: 'Caja', roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'] },
+  { ruta: '/caja/cierres', texto: 'Cierres', roles: ['ADMIN', 'ENCARGADO'] },
+  { ruta: '/medios-pago', texto: 'Medios de pago', roles: ['ADMIN'] },
   { ruta: '/usuarios', texto: 'Usuarios', roles: ['ADMIN'] },
 ]
 

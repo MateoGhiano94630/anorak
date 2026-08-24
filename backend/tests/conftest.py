@@ -28,6 +28,7 @@ from app.core import database
 from app.core.database import Base, get_db
 from app.core.security import create_access_token, hash_password
 from app.main import app
+from app.models.caja import MedioPago, TipoMedioPago
 from app.models.usuario import RolUsuario, Usuario
 
 PASSWORD_DE_PRUEBA = "prueba1234"
@@ -180,3 +181,41 @@ async def client_vendedor(
     """Cliente HTTP autenticado como vendedor."""
     async for cliente in _abrir_cliente(db, usuario_vendedor):
         yield cliente
+
+
+# ── Caja ──────────────────────────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def medios_pago(db: AsyncSession) -> list[MedioPago]:
+    """Los medios con los que cobra el local.
+
+    El efectivo no es opcional: la apertura de caja es un movimiento y todo
+    movimiento tiene un medio, así que sin él la caja no puede abrirse.
+    """
+    medios = [
+        MedioPago(
+            nombre="Efectivo",
+            tipo=TipoMedioPago.efectivo,
+            afecta_efectivo=True,
+            orden=0,
+        ),
+        MedioPago(nombre="Débito", tipo=TipoMedioPago.tarjeta_debito, orden=1),
+        MedioPago(nombre="QR", tipo=TipoMedioPago.qr, orden=2),
+    ]
+    for medio in medios:
+        db.add(medio)
+    await db.flush()
+    return medios
+
+
+@pytest_asyncio.fixture
+async def efectivo(medios_pago: list[MedioPago]) -> MedioPago:
+    """El medio de pago en efectivo."""
+    return medios_pago[0]
+
+
+@pytest_asyncio.fixture
+async def qr(medios_pago: list[MedioPago]) -> MedioPago:
+    """Un medio que no entra al cajón."""
+    return medios_pago[2]
