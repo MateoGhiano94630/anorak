@@ -1,7 +1,7 @@
 """Datos que el sistema da por sentados al arrancar.
 
 Es idempotente: corre en cada arranque y no duplica nada. Sirve para que una
-base recién migrada tenga una sucursal y una cuenta con la que entrar.
+base recién migrada tenga una cuenta con la que entrar.
 """
 
 import logging
@@ -11,35 +11,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import PASSWORD_SEED_POR_DEFECTO, settings
 from app.core.security import hash_password
-from app.models.sucursal import Sucursal, TipoSucursal
 from app.models.usuario import RolUsuario, Usuario
 
 logger = logging.getLogger(__name__)
 
-CODIGO_SUCURSAL_PRINCIPAL = "PRIN"
 # El dominio no puede ser .local ni .test: son nombres de uso reservado y
 # `email-validator` (el que usa EmailStr) los rechaza. Con uno de esos, la
-# cuenta del seed queda creada pero no puede iniciar sesion nunca.
+# cuenta del seed queda creada pero no puede iniciar sesión nunca.
 EMAIL_ADMIN_INICIAL = "admin@anorak.com.ar"
 
 
 async def seed_inicial(db: AsyncSession) -> None:
-    """Crea la sucursal principal y la cuenta de administrador si faltan."""
-    resultado = await db.execute(
-        select(Sucursal).where(Sucursal.codigo == CODIGO_SUCURSAL_PRINCIPAL)
-    )
-    sucursal = resultado.scalar_one_or_none()
-    if sucursal is None:
-        sucursal = Sucursal(
-            nombre="Local principal",
-            codigo=CODIGO_SUCURSAL_PRINCIPAL,
-            tipo=TipoSucursal.local,
-            activa=True,
-        )
-        db.add(sucursal)
-        await db.flush()
-        logger.info("Sucursal principal creada")
-
+    """Crea la cuenta de administrador si falta."""
     resultado = await db.execute(
         select(Usuario).where(Usuario.email == EMAIL_ADMIN_INICIAL)
     )
@@ -50,7 +33,6 @@ async def seed_inicial(db: AsyncSession) -> None:
                 email=EMAIL_ADMIN_INICIAL,
                 password_hash=hash_password(settings.seed_password),
                 rol=RolUsuario.admin,
-                sucursal_id=sucursal.id,
                 activo=True,
             )
         )

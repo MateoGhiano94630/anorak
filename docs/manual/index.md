@@ -11,17 +11,9 @@ entiende, es un problema del manual y hay que corregirlo.
 El sistema se está armando por etapas. Hoy están listas:
 
 - **Entrar al sistema** con tu correo y tu contraseña.
-- **El catálogo**: las prendas del local, con sus talles, colores y precios.
-- **Marcas, colores y categorías**: las listas de las que salen las opciones
-  al cargar una prenda.
-- **Existencias**: cuánto hay de cada prenda en cada local, y qué se está por
-  acabar.
-- **Movimientos**: todo lo que entró y salió, con quién lo hizo y cuándo.
 - **Usuarios**: quién puede entrar y qué puede hacer cada uno.
-- **Sucursales**: los locales y depósitos donde hay mercadería.
 
-En las próximas etapas se suman el mostrador para vender, la caja y los
-cambios.
+Las partes del día a día del local se suman en las próximas etapas.
 
 ## En qué se puede usar
 

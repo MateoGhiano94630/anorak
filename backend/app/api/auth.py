@@ -7,7 +7,6 @@ from sqlalchemy import select
 
 from app.core.deps import CurrentUser, DbSession
 from app.core.security import create_access_token, hash_password, verify_password
-from app.models.sucursal import Sucursal
 from app.models.usuario import Usuario
 from app.schemas.auth import (
     CambioPassword,
@@ -20,21 +19,13 @@ from app.schemas.auth import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-async def _armar_usuario_actual(db: DbSession, usuario: Usuario) -> UsuarioActual:
-    """Completa los datos del usuario con el nombre de su sucursal."""
-    sucursal_nombre: str | None = None
-    if usuario.sucursal_id is not None:
-        resultado = await db.execute(
-            select(Sucursal.nombre).where(Sucursal.id == usuario.sucursal_id)
-        )
-        sucursal_nombre = resultado.scalar_one_or_none()
+def _armar_usuario_actual(usuario: Usuario) -> UsuarioActual:
+    """Los datos del usuario que la interfaz necesita para armar el menú."""
     return UsuarioActual(
         id=usuario.id,
         nombre=usuario.nombre,
         email=usuario.email,
         rol=usuario.rol,
-        sucursal_id=usuario.sucursal_id,
-        sucursal_nombre=sucursal_nombre,
     )
 
 
@@ -61,20 +52,26 @@ async def login(datos: LoginRequest, db: DbSession) -> TokenResponse:
         )
 
     usuario.ultimo_ingreso = datetime.now(UTC)
+    # El identificador va antes del flush para que el listener de auditoría
+    # atribuya el cambio a quien está entrando y no lo deje sin autor.
     db.info["usuario_id"] = usuario.id
+    # El flush es explícito. Antes esta escritura se guardaba de rebote,
+    # porque una consulta posterior disparaba el flush automático; al sacar
+    # esa consulta, la fecha de ingreso dejó de escribirse. Que un dato se
+    # guarde o no según qué otra cosa pase después no es algo que convenga
+    # dejar librado al azar.
+    await db.flush()
 
     token = create_access_token(
         {"sub": str(usuario.id), "email": usuario.email, "rol": usuario.rol.value}
     )
-    return TokenResponse(
-        access_token=token, usuario=await _armar_usuario_actual(db, usuario)
-    )
+    return TokenResponse(access_token=token, usuario=_armar_usuario_actual(usuario))
 
 
 @router.get("/me", response_model=UsuarioActual)
-async def leer_usuario_actual(usuario: CurrentUser, db: DbSession) -> UsuarioActual:
+async def leer_usuario_actual(usuario: CurrentUser) -> UsuarioActual:
     """Devuelve quién está usando el sistema en esta sesión."""
-    return await _armar_usuario_actual(db, usuario)
+    return _armar_usuario_actual(usuario)
 
 
 @router.post("/cambiar-password", response_model=CambioPasswordOk)

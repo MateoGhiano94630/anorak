@@ -7,24 +7,20 @@ hacer cada una. Esta pantalla la ve solo el administrador.
 
 | Puesto | Qué puede hacer |
 |---|---|
-| **Vendedor** | Atiende el mostrador: vende y consulta precios, talles y lo que hay |
-| **Encargado** | Todo lo del vendedor y además cierra la caja, autoriza devoluciones y corrige lo que hay en el local |
-| **Administrador** | Todo, incluidos los precios y estas mismas cuentas |
+| **Vendedor** | Atiende el mostrador |
+| **Encargado** | Todo lo del vendedor, y además lo que necesita autorización |
+| **Administrador** | Todo, incluidas estas mismas cuentas |
 
 Cada persona ve en el menú solo lo que le corresponde. Si alguien dice que le
 falta una opción, lo más probable es que sea del puesto y no una falla.
 
 ## Dar de alta una cuenta
 
-Hacen falta el nombre, el correo, una contraseña de al menos ocho caracteres,
-el puesto y la sucursal donde trabaja.
+Hacen falta el nombre, el correo, una contraseña de al menos ocho caracteres
+y el puesto.
 
 La contraseña que ponés es para el primer ingreso: la persona la cambia
 después desde su propia cuenta.
-
-**Sin sucursal fija** es para quien no trabaja siempre en el mismo lugar,
-normalmente el dueño. Quien atiende un mostrador siempre tiene la suya,
-porque sus ventas y su caja pertenecen a un local concreto.
 
 ## Dar de baja una cuenta
 

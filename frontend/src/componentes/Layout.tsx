@@ -21,15 +21,6 @@ interface OpcionMenu {
 
 const MENU: OpcionMenu[] = [
   { ruta: '/', texto: 'Inicio', roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'] },
-  { ruta: '/catalogo', texto: 'Catálogo', roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'] },
-  {
-    ruta: '/existencias',
-    texto: 'Existencias',
-    roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'],
-  },
-  { ruta: '/movimientos', texto: 'Movimientos', roles: ['ADMIN', 'ENCARGADO'] },
-  { ruta: '/catalogos', texto: 'Marcas y talles', roles: ['ADMIN', 'ENCARGADO'] },
-  { ruta: '/sucursales', texto: 'Sucursales', roles: ['ADMIN'] },
   { ruta: '/usuarios', texto: 'Usuarios', roles: ['ADMIN'] },
 ]
 
@@ -51,10 +42,7 @@ export function Layout() {
       <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3">
         <div>
           <p className="text-lg font-semibold">Anorak</p>
-          <p className="text-xs text-slate-500">
-            {usuario.nombre}
-            {usuario.sucursal_nombre !== null ? ` · ${usuario.sucursal_nombre}` : ''}
-          </p>
+          <p className="text-xs text-slate-500">{usuario.nombre}</p>
         </div>
         <Boton variante="secundario" onClick={salir}>
           Salir

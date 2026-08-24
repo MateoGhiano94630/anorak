@@ -37,7 +37,6 @@ async def crear_usuario(
         email=email,
         password_hash=hash_password(datos.password),
         rol=datos.rol,
-        sucursal_id=datos.sucursal_id,
         activo=True,
     )
     db.add(usuario)

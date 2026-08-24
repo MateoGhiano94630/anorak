@@ -15,36 +15,6 @@ interface Acceso {
 
 const ACCESOS: Acceso[] = [
   {
-    ruta: '/catalogo',
-    titulo: 'Catálogo',
-    detalle: 'Las prendas del local, con sus talles, colores y precios.',
-    roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'],
-  },
-  {
-    ruta: '/existencias',
-    titulo: 'Existencias',
-    detalle: 'Cuánto hay de cada prenda y qué se está por acabar.',
-    roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'],
-  },
-  {
-    ruta: '/movimientos',
-    titulo: 'Movimientos',
-    detalle: 'Todo lo que entró y salió, con quién lo hizo y cuándo.',
-    roles: ['ADMIN', 'ENCARGADO'],
-  },
-  {
-    ruta: '/catalogos',
-    titulo: 'Marcas y talles',
-    detalle: 'Las listas de las que salen las opciones al cargar una prenda.',
-    roles: ['ADMIN', 'ENCARGADO'],
-  },
-  {
-    ruta: '/sucursales',
-    titulo: 'Sucursales',
-    detalle: 'Los locales y depósitos donde hay mercadería y caja.',
-    roles: ['ADMIN'],
-  },
-  {
     ruta: '/usuarios',
     titulo: 'Usuarios',
     detalle: 'Quién entra al sistema y qué puede hacer.',
@@ -65,7 +35,7 @@ export function Inicio() {
       <div>
         <h1 className="text-xl font-semibold">Hola, {usuario.nombre}</h1>
         <p className="mt-1 text-sm text-slate-600">
-          El mostrador y la caja se suman en las próximas etapas.
+          Los módulos del negocio se suman en las próximas etapas.
         </p>
       </div>
 

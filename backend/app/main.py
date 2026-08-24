@@ -10,17 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.audit_log import router as audit_log_router
 from app.api.auth import router as auth_router
-from app.api.catalogo import (
-    categorias_router,
-    colores_router,
-    curvas_router,
-    marcas_router,
-)
-from app.api.precios import router as precios_router
-from app.api.productos import router as productos_router
-from app.api.productos import variantes_router
-from app.api.stock import router as stock_router
-from app.api.sucursales import router as sucursales_router
 from app.api.usuarios import router as usuarios_router
 from app.core import (
     audit as _audit,  # noqa: F401 — importarlo registra el listener de auditoría
@@ -45,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
-    """Deja la base con los datos mínimos y avisa si falta migrar.
+    """Deja la base con la cuenta inicial y avisa si falta migrar.
 
     Si la base no responde, el seed se saltea con un log y la API levanta
     igual: un problema de conexión no puede dejar a Railway sin health check.
@@ -75,15 +64,6 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(usuarios_router)
-app.include_router(sucursales_router)
-app.include_router(marcas_router)
-app.include_router(curvas_router)
-app.include_router(colores_router)
-app.include_router(categorias_router)
-app.include_router(productos_router)
-app.include_router(variantes_router)
-app.include_router(precios_router)
-app.include_router(stock_router)
 app.include_router(audit_log_router)
 
 

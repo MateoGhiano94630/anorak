@@ -3,13 +3,10 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.sucursal import Sucursal
 from app.models.usuario import RolUsuario, Usuario
 
 
-async def test_admin_da_de_alta_un_usuario(
-    client_admin: AsyncClient, sucursal: Sucursal
-) -> None:
+async def test_admin_da_de_alta_un_usuario(client_admin: AsyncClient) -> None:
     """El admin crea cuentas."""
     respuesta = await client_admin.post(
         "/usuarios",
@@ -18,7 +15,6 @@ async def test_admin_da_de_alta_un_usuario(
             "email": "Sofia@Prueba.com.ar",
             "password": "clave12345",
             "rol": "VENDEDOR",
-            "sucursal_id": str(sucursal.id),
         },
     )
     assert respuesta.status_code == 201

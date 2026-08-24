@@ -19,8 +19,6 @@ class UsuarioActual(BaseModel):
     nombre: str
     email: EmailStr
     rol: str
-    sucursal_id: uuid.UUID | None
-    sucursal_nombre: str | None = None
 
     model_config = {"from_attributes": True}
 

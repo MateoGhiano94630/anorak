@@ -1,8 +1,10 @@
 # Anorak — sistema de gestión para local de ropa
 
-Catálogo con variantes de talle y color, control de stock y punto de venta,
-para un local de ropa en Argentina. Facturación contra ARCA (ex AFIP), moneda
-en pesos.
+Sistema de gestión para un local de ropa en Argentina. Facturación contra
+ARCA (ex AFIP), moneda en pesos.
+
+**El alcance de negocio se está redefiniendo** — ver "Estado del alcance" más
+abajo.
 
 ## Stack — no se cambia
 
@@ -52,7 +54,6 @@ Cada una viene de un error ya pagado. No se discuten, se aplican.
 | `FlexibleJSON` propio (`JSONB` con variante `sqlite`) | Mismo motivo |
 | `enum_texto()` para columnas de enum, nunca `String` pelado con `Mapped[MiEnum]` | Con `String`, la fila leída de la base vuelve como `str` y cualquier `.value` explota en producción |
 | Los servicios externos (ARCA, R2) se mockean con fixtures **automáticas** en `conftest.py` | Si hubiera que acordarse de pedirlas, el día que alguien escriba un test sin pedirla la suite sube archivos a un bucket real |
-| Todo cambio de stock pasa por `stock_service.registrar_movimiento()`. Ningún módulo toca `stock.cantidad` a mano | Si cada módulo actualizara el saldo por su cuenta, alcanzaría con que uno se olvide del movimiento para que el número quede sin explicación |
 | `StrEnum`, nunca `(str, Enum)` | |
 | Toda la plata en `Numeric`/`Decimal`. **Jamás float** | Un centavo mal redondeado en un cierre de caja es una hora de alguien buscándolo |
 | Type hints en todas las funciones, docstring en las públicas | `mypy --strict` tiene que pasar |
@@ -83,47 +84,36 @@ Cada una viene de un error ya pagado. No se discuten, se aplican.
 - Bajas **lógicas** (`activo = false`), nunca físicas.
 - Nunca commitear `.env`, `*.key`, `*.crt`, `*.pem`.
 
-## Decisiones de modelado ya tomadas
+## Estado del alcance
 
-Están explicadas en `docs/arquitectura.md`. En una línea cada una:
+El 24/08/2026 se retiraron todos los módulos de negocio (catálogo, precios,
+stock y sucursales): el análisis del que salieron era equivocado. Hoy el
+sistema tiene **ingreso, usuarios y auditoría**, y nada más.
 
-1. **Producto → Variante → Stock.** El stock nunca cuelga del producto.
-2. **Multi-sucursal desde el día uno**, aunque hoy haya un solo local.
-3. **El movimiento de stock es un hecho y no se borra.** El stock actual se
-   puede reconstruir sumando movimientos, y `GET /stock/control` compara las
-   dos formas de contar: si difieren, hay un bug — ver D-22.
-4. **La línea de venta guarda el precio con el que se vendió** (snapshot, no join).
-5. **Devolución y cambio son documentos propios**, no una venta en negativo.
-6. **La caja se abre y se cierra**, y cada cobro dice dónde termina la plata.
-7. **El precio tiene historia**, con quién lo cambió y cuándo. Es un estado con
-   vigencia (`vigente_desde`/`vigente_hasta`) más un índice único parcial, no
-   una columna copiada en `variante` — ver D-19.
+El alcance nuevo está por definirse. Hasta que esté, no hay decisiones de
+modelado de negocio vigentes: las que había están en el historial de git y
+resumidas, con lo que se aprendió de cada una, en `docs/arquitectura.md` §6.
 
-Respuestas del dueño que fijan el modelo (20/08/2026):
+Lo que sí sigue vigente:
 
-| Pregunta | Respuesta |
-|---|---|
-| Sucursales | Una sola, sin depósito aparte. El modelo igual es multi-sucursal |
-| Venta por mayor | No, solo minorista |
-| Talles | Catálogo cerrado por categoría |
-| Devoluciones | Cambio o nota de crédito; **nunca** se devuelve efectivo |
-| Plazo de cambio | 30 días, con ticket obligatorio |
-| Descuentos | Manuales, por línea y sobre el total. Sin motor de promociones |
-| Comisiones | No, y no interesa el dato de vendedor |
-| Venta sin stock | **Se bloquea** (parámetro `PERMITIR_STOCK_NEGATIVO`, default `false`) |
+- El negocio es un local de ropa en Argentina: facturación contra ARCA, moneda
+  en pesos, fechas en dd/mm/aaaa.
+- El sistema se usa en el mostrador, desde computadora, tablet y celular.
+- Los tres puestos son `ADMIN`, `ENCARGADO` y `VENDEDOR`.
 
 ## Errores ya resueltos — no repetirlos
 
 | Problema | Solución |
 |---|---|
-| `sucursal.created_by → usuario` y `usuario.sucursal_id → sucursal` armaban un ciclo de claves foráneas y la primera migración no podía ordenarse | `created_by`/`updated_by` son UUID **sin** clave foránea. `audit_log.usuario_id` sí la tiene |
+| `created_by`/`updated_by` están en todas las tablas, así que una clave foránea a `usuario` arma un ciclo con cualquier tabla a la que `usuario` apunte, y la primera migración no puede ordenarse | Son UUID **sin** clave foránea. `audit_log.usuario_id` sí la tiene |
 | `EmailStr` rechaza los dominios `.test` y `.local`: son nombres de uso reservado. La cuenta del seed quedaba creada pero no podía entrar nunca | Dominios reales en el seed y en los tests (`@anorak.com.ar`, `@prueba.com.ar`) |
 | Una columna declarada `String` con anotación `Mapped[MiEnum]` devuelve `str` al leerla de la base. Los tests pasaban igual porque el objeto recién creado conserva el enum; el ingreso fallaba con 500 en producción | `enum_texto()` en `app/core/types.py`, con test de regresión en `tests/test_usuarios.py` |
 | El registro de auditoría de un UPDATE puede quedar sin el valor anterior si la columna nunca se leyó de la base | Los endpoints traen la fila con `db.get()` antes de tocarla. Documentado en el docstring de `_diff` |
 | Vitest levantaba los archivos de Playwright y fallaba con un error que no decía nada | `test.include` acotado a `src/` en `vite.config.ts` |
 | Las migraciones se autogeneran contra SQLite | Funciona porque todos los tipos son portables, pero **hay que leer el archivo generado** antes de commitearlo |
 | `client_admin` y `client_vendedor` eran el **mismo** cliente HTTP con el header pisado: un test que pedía los dos recibía el último resuelto, y los tests de permisos daban verde sin probar nada | Cada fixture de cliente abre el suyo (`_abrir_cliente` en `tests/conftest.py`) |
-| Una columna de enum como `String` con anotación `Mapped[MiEnum]` ya está cubierta arriba; la trampa emparentada es dejar `talle_id` nulo para lo que no tiene talle | PostgreSQL considera distintos entre sí dos nulos, así que la restricción de unicidad de variantes no serviría. Se usa una curva "Único" (D-18) |
+| Una columna que puede quedar nula dentro de una restricción de unicidad no la protege | PostgreSQL considera distintos entre sí a dos nulos. Si una columna forma parte de un índice único, no puede aceptar nulos |
+| El `ultimo_ingreso` del login se guardaba de rebote, porque una consulta posterior disparaba el flush automático. Al sacar esa consulta dejó de escribirse | `await db.flush()` explícito en `login`. Un dato que se guarda o no según qué otra cosa pase después no puede quedar librado al azar |
 
 ## Documentación
 

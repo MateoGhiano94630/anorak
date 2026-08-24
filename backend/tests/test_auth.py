@@ -27,7 +27,6 @@ async def test_login_correcto_devuelve_token_y_usuario(
     assert cuerpo["access_token"]
     assert cuerpo["usuario"]["email"] == usuario_admin.email
     assert cuerpo["usuario"]["rol"] == "ADMIN"
-    assert cuerpo["usuario"]["sucursal_nombre"] == "Local de prueba"
 
 
 async def test_login_con_password_incorrecta_no_entra(

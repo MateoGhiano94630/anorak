@@ -51,12 +51,15 @@ class AuditMixin(TimestampMixin):
     sincronización automática) y no una persona.
 
     Son UUID sin clave foránea a `usuario`, a diferencia de
-    `audit_log.usuario_id`, que sí la tiene. El motivo es un ciclo real: estas
-    dos columnas están en *todas* las tablas, incluida `sucursal`, y `usuario`
-    a su vez apunta a `sucursal`. Con la FK puesta, PostgreSQL no puede ordenar
-    la creación de las tablas y la primera migración no corre. Lo que se pierde
-    es poco: las cuentas se dan de baja de forma lógica y nunca se borran, así
-    que un `created_by` apuntando a la nada no puede ocurrir.
+    `audit_log.usuario_id`, que sí la tiene. El motivo es un ciclo de claves
+    foráneas: estas dos columnas están en *todas* las tablas, así que cualquier
+    tabla a la que `usuario` apunte queda apuntándose de vuelta. Con la FK
+    puesta, PostgreSQL no puede ordenar la creación de las tablas y la primera
+    migración no corre. Ya pasó una vez, con la tabla de sucursales.
+
+    Lo que se pierde es poco: las cuentas se dan de baja de forma lógica y
+    nunca se borran, así que un `created_by` apuntando a la nada no puede
+    ocurrir.
     """
 
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUIDType, nullable=True)

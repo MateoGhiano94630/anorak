@@ -1,8 +1,11 @@
 # Anorak
 
-Sistema de gestión para un local de ropa: catálogo con variantes de talle y
-color, control de stock y punto de venta. Pensado para Argentina —facturación
-contra ARCA y moneda en pesos.
+Sistema de gestión para un local de ropa en Argentina: facturación contra
+ARCA y moneda en pesos.
+
+El alcance de los módulos de negocio se está redefiniendo. Hoy el sistema
+tiene ingreso, usuarios y auditoría automática — ver
+[docs/handoff.md](docs/handoff.md).
 
 ## Puesta en marcha
 
@@ -21,9 +24,8 @@ pnpm install
 pnpm dev                                      # http://localhost:5173
 ```
 
-Al arrancar por primera vez, el backend crea la sucursal "Local principal" y
-la cuenta `admin@anorak.com.ar` con la contraseña de `SEED_PASSWORD`.
-Cambiala apenas entres.
+Al arrancar por primera vez, el backend crea la cuenta `admin@anorak.com.ar`
+con la contraseña de `SEED_PASSWORD`. Cambiala apenas entres.
 
 ## Verificar antes de commitear
 

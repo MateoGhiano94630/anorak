@@ -15,7 +15,6 @@ class UsuarioCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     rol: RolUsuario
-    sucursal_id: uuid.UUID | None = None
 
 
 class UsuarioUpdate(BaseModel):
@@ -24,7 +23,6 @@ class UsuarioUpdate(BaseModel):
     nombre: str | None = Field(default=None, min_length=1, max_length=100)
     email: EmailStr | None = None
     rol: RolUsuario | None = None
-    sucursal_id: uuid.UUID | None = None
     activo: bool | None = None
 
 
@@ -35,7 +33,6 @@ class UsuarioOut(BaseModel):
     nombre: str
     email: EmailStr
     rol: RolUsuario
-    sucursal_id: uuid.UUID | None
     activo: bool
     ultimo_ingreso: datetime | None
 

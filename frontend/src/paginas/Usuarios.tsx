@@ -9,14 +9,9 @@ import { Campo, Selector } from '../componentes/Campo'
 import { Listado, type Columna } from '../componentes/Listado'
 import { useSesion } from '../contexto/sesion'
 import { ErrorApi, pedir } from '../lib/api'
+import { NOMBRE_ROL, opcionesDe } from '../lib/etiquetas'
 import { formatearFechaHora } from '../lib/fecha'
-import type { Rol, Sucursal, Usuario } from '../lib/tipos'
-
-const NOMBRE_ROL: Record<Rol, string> = {
-  ADMIN: 'Administrador',
-  ENCARGADO: 'Encargado',
-  VENDEDOR: 'Vendedor',
-}
+import type { Rol, Usuario } from '../lib/tipos'
 
 export function Usuarios() {
   const clienteConsultas = useQueryClient()
@@ -25,18 +20,12 @@ export function Usuarios() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rol, setRol] = useState<Rol>('VENDEDOR')
-  const [sucursalId, setSucursalId] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const usuarios = useQuery({
     queryKey: ['usuarios'],
     queryFn: () => pedir<Usuario[]>('/usuarios'),
   })
-  const sucursales = useQuery({
-    queryKey: ['sucursales'],
-    queryFn: () => pedir<Sucursal[]>('/sucursales'),
-  })
-
   function refrescar(): void {
     void clienteConsultas.invalidateQueries({ queryKey: ['usuarios'] })
   }
@@ -45,13 +34,7 @@ export function Usuarios() {
     mutationFn: () =>
       pedir<Usuario>('/usuarios', {
         metodo: 'POST',
-        cuerpo: {
-          nombre,
-          email,
-          password,
-          rol,
-          sucursal_id: sucursalId === '' ? null : sucursalId,
-        },
+        cuerpo: { nombre, email, password, rol },
       }),
     onSuccess: () => {
       setNombre('')
@@ -103,11 +86,6 @@ export function Usuarios() {
     },
   ]
 
-  const opcionesSucursal = [
-    { valor: '', texto: 'Sin sucursal fija' },
-    ...(sucursales.data ?? []).map((s) => ({ valor: s.id, texto: s.nombre })),
-  ]
-
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Usuarios</h1>
@@ -146,17 +124,7 @@ export function Usuarios() {
           etiqueta="Puesto"
           value={rol}
           onChange={(evento) => setRol(evento.target.value as Rol)}
-          opciones={[
-            { valor: 'VENDEDOR', texto: 'Vendedor' },
-            { valor: 'ENCARGADO', texto: 'Encargado' },
-            { valor: 'ADMIN', texto: 'Administrador' },
-          ]}
-        />
-        <Selector
-          etiqueta="Sucursal"
-          value={sucursalId}
-          onChange={(evento) => setSucursalId(evento.target.value)}
-          opciones={opcionesSucursal}
+          opciones={opcionesDe(NOMBRE_ROL)}
         />
         <div className="flex items-end">
           <Boton type="submit" disabled={alta.isPending}>

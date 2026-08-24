@@ -20,20 +20,3 @@ export function formatearPesos(valor: string | number | null | undefined): strin
   if (Number.isNaN(numero)) return ''
   return FORMATO.format(numero)
 }
-
-/**
- * El precio de una prenda que puede valer distinto según el talle.
- *
- * Si todos los talles valen lo mismo se muestra un solo importe: un rango con
- * los dos números iguales se lee como si hubiera dos precios distintos y hace
- * dudar a quien atiende.
- */
-export function formatearRango(
-  desde: string | null,
-  hasta: string | null,
-  sinPrecio = 'Sin precio',
-): string {
-  if (desde === null) return sinPrecio
-  if (hasta === null || desde === hasta) return formatearPesos(desde)
-  return `${formatearPesos(desde)} – ${formatearPesos(hasta)}`
-}
