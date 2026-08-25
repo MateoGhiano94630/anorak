@@ -11,12 +11,18 @@ entiende, es un problema del manual y hay que corregirlo.
 El sistema se está armando por etapas. Hoy están listas:
 
 - **Entrar al sistema** con tu correo y tu contraseña.
+- **Vender**: armar la venta, cobrarla con uno o varios medios de pago, y
+  registrarla.
+- **Las ventas**: buscarlas, ver el detalle y anular una que salió mal.
+- **El catálogo**: lo que el local vende, para no tipearlo cada vez. Es
+  opcional.
 - **La caja**: abrirla al llegar, anotar lo que entra y sale, y cerrarla al
   irse contando lo que quedó.
 - **Medios de pago**: con qué se puede cobrar.
 - **Usuarios**: quién puede entrar y qué puede hacer cada uno.
 
-El resto del día a día del local se suma en las próximas etapas.
+El control de lo que hay en el local y los cambios se suman en las
+próximas etapas.
 
 ## En qué se puede usar
 

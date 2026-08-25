@@ -262,6 +262,123 @@ export const AYUDA = {
       },
     ],
   },
+  vender: {
+    titulo: 'Vender',
+    resumen:
+      'Se arma la venta, se cobra y se registra. La plata entra a la caja del día.',
+    preguntas: [
+      {
+        pregunta: '¿Por qué me pide abrir la caja antes de vender?',
+        respuesta:
+          'Porque toda venta pertenece a la caja del día: es lo que hace que al ' +
+          'cerrar los números cuadren. Abrir la caja es contar el efectivo del ' +
+          'cajón y tocar un botón, y se hace una sola vez por jornada.',
+      },
+      {
+        pregunta: '¿Tengo que cargar la prenda en el catálogo antes de venderla?',
+        respuesta:
+          'No. Podés escribir lo que vendiste y su precio, y listo. El catálogo es ' +
+          'opcional y sirve para no tipear lo mismo todos los días y para saber ' +
+          'después qué se vende más. Conviene ir cargando de a poco lo que más se ' +
+          'repite.',
+      },
+      {
+        pregunta: '¿Dónde pongo el talle?',
+        respuesta:
+          'En la línea de la venta, al lado de la cantidad. En el catálogo hay un ' +
+          'artículo por modelo, no uno por número: así la lista es corta y de todos ' +
+          'modos queda registrado en qué talles se vende cada cosa.',
+      },
+      {
+        pregunta: 'El cliente paga una parte en efectivo y otra con tarjeta.',
+        respuesta:
+          'Se puede. Poné cuánto entra por cada medio; el sistema te avisa si falta ' +
+          'o sobra. El efectivo entra al cajón y la tarjeta va a la cuenta, y cada ' +
+          'uno aparece donde corresponde en el cierre.',
+      },
+      {
+        pregunta: '¿Cómo calculo el vuelto?',
+        respuesta:
+          'Escribí con cuánto te paga en el casillero de al lado y el sistema te ' +
+          'muestra el vuelto. Ese número no se guarda: lo que se cobra es el importe ' +
+          'de la venta, no lo que el cliente puso sobre el mostrador.',
+      },
+      {
+        pregunta: '¿Cómo hago un descuento?',
+        respuesta:
+          'De dos formas, y se pueden combinar: bajando el precio de una prenda ' +
+          'puntual en su línea, o con un descuento al pie de toda la venta. Los dos ' +
+          'quedan registrados por separado.',
+      },
+    ],
+  },
+  ventas: {
+    titulo: 'Ventas',
+    resumen: 'Todas las ventas del local, con lo que se vendió y cómo se pagó.',
+    preguntas: [
+      {
+        pregunta: '¿Cómo busco una venta?',
+        respuesta:
+          'Por su número, escribiendo por ejemplo #12, o por lo que dice alguna de ' +
+          'sus líneas: escribiendo "campera" aparecen todas las ventas que ' +
+          'incluyeron una.',
+      },
+      {
+        pregunta: 'Cargué una venta mal. ¿Cómo la arreglo?',
+        respuesta:
+          'Se anula. La venta no se borra: queda marcada como anulada, con tu ' +
+          'nombre y el motivo, y el sistema devuelve la plata a la caja para que el ' +
+          'arqueo siga cuadrando. Después cargala de nuevo bien.',
+      },
+      {
+        pregunta: 'Quiero anular una venta de ayer y me pide abrir la caja.',
+        respuesta:
+          'Porque la plata tiene que volver a alguna caja, y la de ayer ya está ' +
+          'cerrada con su arqueo contado y firmado. La devolución entra en la caja ' +
+          'de hoy, que es como se hace también en papel.',
+      },
+      {
+        pregunta:
+          '¿Por qué el precio de una venta vieja no cambió cuando actualicé el catálogo?',
+        respuesta:
+          'Porque cada venta guarda el precio con el que se vendió. Si cambiara ' +
+          'junto con el catálogo, no habría forma de saber a cuánto vendiste el mes ' +
+          'pasado.',
+      },
+    ],
+  },
+  articulos: {
+    titulo: 'Catálogo',
+    resumen: 'Lo que el local vende, con su precio, para no tipearlo cada vez.',
+    preguntas: [
+      {
+        pregunta: '¿Tengo que cargar todo antes de empezar a vender?',
+        respuesta:
+          'No, y no conviene. Se puede vender escribiendo la prenda a mano desde el ' +
+          'primer día. Cargá de a poco lo que más se repite: cada cosa que cargues ' +
+          'te ahorra tipeo y te mejora los reportes, sin frenar el mostrador.',
+      },
+      {
+        pregunta: '¿Cargo un artículo por cada talle?',
+        respuesta:
+          'No. Un artículo por modelo: "Zapatilla Nike Air" es uno solo, y el talle ' +
+          'se escribe al vender. Así la lista queda corta y de todos modos vas a ' +
+          'saber en qué talles se vende cada cosa.',
+      },
+      {
+        pregunta: 'Si cambio el precio, ¿cambian las ventas anteriores?',
+        respuesta:
+          'No. El precio del catálogo es el que se propone al vender de ahora en ' +
+          'adelante. Cada venta ya hecha guardó el suyo y no se toca.',
+      },
+      {
+        pregunta: '¿Puedo borrar un artículo que ya no vendo?',
+        respuesta:
+          'Se desactiva. Deja de aparecer al vender, pero las ventas viejas siguen ' +
+          'sabiendo qué se vendió.',
+      },
+    ],
+  },
 } as const satisfies Record<string, AyudaPantalla>
 
 /** Los nombres de pantalla que tienen ayuda escrita. */

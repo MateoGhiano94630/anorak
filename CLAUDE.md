@@ -55,6 +55,7 @@ Cada una viene de un error ya pagado. No se discuten, se aplican.
 | `enum_texto()` para columnas de enum, nunca `String` pelado con `Mapped[MiEnum]` | Con `String`, la fila leída de la base vuelve como `str` y cualquier `.value` explota en producción |
 | Los servicios externos (ARCA, R2) se mockean con fixtures **automáticas** en `conftest.py` | Si hubiera que acordarse de pedirlas, el día que alguien escriba un test sin pedirla la suite sube archivos a un bucket real |
 | Todo movimiento de caja pasa por `caja_service.registrar_movimiento()` | Si cada módulo anotara por su cuenta, alcanzaría con que uno se olvide para que el arqueo quede sin explicación |
+| Una venta guarda la descripción y el precio con el que se vendió, copiados | Si salieran por referencia al catálogo, subir un precio cambiaría todas las ventas viejas |
 | **Nunca** ordenar filas por `created_at` cuando el orden importa | En PostgreSQL `CURRENT_TIMESTAMP` es la hora de inicio de la transacción y en SQLite tiene precisión de segundos: el orden queda indeterminado. Va una columna de orden propia |
 | `StrEnum`, nunca `(str, Enum)` | |
 | Toda la plata en `Numeric`/`Decimal`. **Jamás float** | Un centavo mal redondeado en un cierre de caja es una hora de alguien buscándolo |
@@ -75,7 +76,8 @@ Cada una viene de un error ya pagado. No se discuten, se aplican.
 | Los listados van con `<Listado>`, nunca una `<table>` suelta | Tabla en pantalla ancha y tarjetas en angosta, desde una sola definición de columnas |
 | Ningún campo de carga por debajo de **16px** (`text-base`) | iOS amplía la pantalla solo al tocarlo |
 | Los textos de ayuda viven **todos** en `lib/ayuda.ts`, nunca sueltos en una pantalla | El manual de usuario se arma de ahí: así las dos fuentes no se contradicen |
-| Dos campos de una misma pantalla nunca llevan la misma etiqueta | "Motivo" y "Motivo" obligan a adivinar cuál es cuál, y un lector de pantalla los lee idénticos |
+| Dos campos de una misma pantalla nunca llevan la misma etiqueta | "Motivo" y "Motivo" obligan a adivinar cuál es cuál, y un lector de pantalla los lee idénticos. Ya pasó dos veces: en la caja y en el mostrador |
+| Las cuentas de plata del frontend se hacen en **centavos enteros** (`lib/carrito.ts`) | Sumando en pesos, `0.1 + 0.2` da `0.30000000000000004`, se cobra mal y aparece recién en el arqueo del cierre |
 
 ### Datos
 
@@ -94,6 +96,20 @@ Hoy el sistema tiene ingreso, usuarios, auditoría y caja.
 
 Lo retirado está en el historial de git y resumido, con lo que se aprendió de
 cada decisión, en `docs/arquitectura.md` §7.
+
+### Decisiones de las ventas (24/08/2026)
+
+| Pregunta | Respuesta |
+|---|---|
+| Contra qué se vende | **Híbrido**: catálogo opcional y línea escrita a mano, siempre disponible |
+| Forma del artículo | Plano, uno por modelo. El talle se anota en la línea de la venta |
+| Descuentos | Por línea y sobre el total |
+| Vender con la caja cerrada | **No**. Toda venta pertenece a una sesión de caja |
+| Venta mal cargada | Se anula entera; no se borra, y la plata vuelve a la caja abierta |
+| Stock | **No** por ahora. La venta no descuenta existencias |
+| Ticket | Por ahora no: alcanza el resumen en pantalla |
+| Sin conexión | No por ahora. La venta necesita internet |
+| Cliente | No se identifica. Es un módulo propio el día que haya cuenta corriente |
 
 ### Decisiones de la caja (24/08/2026)
 

@@ -4,7 +4,7 @@ Qué está hecho, qué está a medias y qué falta. Este archivo se actualiza al
 cerrar cada tanda, y dice la verdad aunque sea incómoda: un "listo" que no lo
 está cuesta más caro que un pendiente anotado.
 
-**Última actualización**: 24/08/2026 — módulo de caja.
+**Última actualización**: 24/08/2026 — módulo de ventas.
 
 ---
 
@@ -12,12 +12,12 @@ está cuesta más caro que un pendiente anotado.
 
 | | |
 |---|---|
-| Estado | Base + caja funcionando |
-| Última tanda cerrada | 2 (caja) |
-| Próxima | A definir. La caja dejó puesto el gancho para el punto de venta |
-| Tests backend | 65, todos en verde |
-| Tests frontend | 18 unitarios + 3 de punta a punta (por 2 dispositivos) |
-| Migraciones | 2, aplicadas. Sin pendientes |
+| Estado | Base + caja + ventas funcionando |
+| Última tanda cerrada | 3 (ventas) |
+| Próxima | A definir |
+| Tests backend | 95, todos en verde |
+| Tests frontend | 30 unitarios + 3 de punta a punta (por 2 dispositivos) |
+| Migraciones | 3, aplicadas. Sin pendientes |
 | CI | Escrito y completo. **Todavía no corrió en GitHub**: el repositorio es local |
 | Despliegue | **No desplegado.** Ni Railway ni Cloudflare Pages están configurados |
 
@@ -84,19 +84,38 @@ no existe.
   movimientos en efectivo es exactamente el fondo que quedó.
 - **Historial de cierres** para encargado y administrador.
 
+### Backend — ventas (tanda 3)
+
+- **Catálogo opcional** de artículos: uno por modelo, con precio y categoría.
+  El talle vive en la línea de la venta, no en el artículo.
+- **Venta** con líneas que salen del catálogo o escritas a mano, descuentos
+  por línea y sobre el total, y numeración correlativa propia (no fiscal).
+- **La línea guarda la descripción y el precio con el que se vendió.** Hay un
+  test que cambia el precio del artículo y comprueba que la venta no se mueve.
+- **Cobro con varios medios de pago.** Lo cobrado tiene que dar exactamente el
+  total: ni de menos ni de más.
+- **Sin caja abierta no se vende** (409 con un mensaje que dice qué hacer).
+  Cada cobro es un movimiento de caja que apunta a la venta; no hay tabla de
+  pagos aparte.
+- **Anulación** que no borra: marca la venta y genera las reversiones en la
+  sesión **abierta ahora**, para no tocar un arqueo ya congelado.
+
 ### Frontend
 
 - **Ingreso** con el token en memoria. Al recargar la pestaña hay que volver a
   entrar, y la ayuda de la pantalla lo explica.
 - **Marco general**: menú filtrado por puesto, columna a la izquierda en
   pantalla ancha y fila deslizable en el celular.
-- **Pantallas**: Inicio, Caja, Cierres de caja, Medios de pago y Usuarios.
+- **Pantallas**: Inicio, Vender, Ventas, Caja, Cierres de caja, Catálogo,
+  Medios de pago y Usuarios.
 - **Componentes base**: `<Listado>` (tabla en pantalla ancha, tarjetas en
   angosta, desde una sola definición de columnas), `<CampoFecha>` (dd/mm/aaaa,
   sin `<input type="date">`), `<Campo>`, `<Selector>`, `<Boton>`, `<Ayuda>`.
 - **Bibliotecas propias**: `lib/fecha.ts`, `lib/dinero.ts`, `lib/api.ts`,
   `lib/sesion.ts`, `lib/ayuda.ts`, `lib/etiquetas.ts`, `lib/tipos.ts`,
-  `lib/importes.ts`.
+  `lib/importes.ts`, `lib/carrito.ts`.
+- **Las cuentas del mostrador viven en `lib/carrito.ts`**, en centavos enteros
+  y con tests: es la parte que no puede estar mal.
 
 Probado a mano el 24/08/2026, dos veces:
 
@@ -116,7 +135,7 @@ Probado a mano el 24/08/2026, dos veces:
 
 | # | Pendiente | Cuándo |
 |---|---|---|
-| P-1 | La caja no cobra ventas: el punto de venta no existe. Por ahora funciona como libro de caja, y el gancho para el cobro está puesto | Próxima tanda |
+| P-1 | La venta **no descuenta existencias**: no hay control de stock. Fue una decisión, no un olvido | Cuando el local lo necesite |
 | P-2 | El repositorio es local: no hay remoto en GitHub, así que el CI nunca corrió | Antes de la próxima tanda |
 | P-3 | Nada está desplegado. Falta crear el proyecto en Railway (con la URL del Session Pooler de Supabase) y en Cloudflare Pages | Cuando haya algo que mostrar |
 | P-4 | `pre-commit install` no se corrió en la máquina de desarrollo | Antes del primer commit compartido |
@@ -126,6 +145,9 @@ Probado a mano el 24/08/2026, dos veces:
 | P-8 | La configuración de ARCA y R2 quedó declarada pero sin consumidor. `boto3`, `weasyprint`, `pillow` y `qrcode` siguen en las dependencias porque son parte del stack elegido | Se usan cuando vuelva a haber un módulo que los necesite |
 | P-9 | La comisión y los días de acreditación de los medios de pago están vacíos: los tiene que cargar el dueño con los números de su contrato | Antes de conciliar contra el resumen del procesador |
 | P-10 | No hay comprobante de cierre en PDF. Hoy el arqueo se ve en pantalla y queda en el historial | Cuando haga falta imprimirlo |
+| P-11 | No hay ticket para el cliente. Después de cobrar se muestra el resumen en pantalla | El día que haya cambios con ticket obligatorio |
+| P-12 | El mostrador necesita conexión para vender. Los identificadores ya se generan del lado del cliente, así que sumar la cola local después no obliga a migrar | Si la conexión del local resulta un problema |
+| P-13 | Mientras haya líneas escritas a mano, "Campera azul" y "campera azul" son dos cosas para cualquier reporte. Es el costo de poder vender sin catálogo | Se atenúa cargando el catálogo |
 
 ---
 
@@ -155,6 +177,12 @@ Probado a mano el 24/08/2026, dos veces:
 - **No ordenar por `created_at` cuando el orden importa.** En PostgreSQL es la
   hora de inicio de la transacción y en SQLite tiene precisión de segundos
   (D-14).
+- **Una venta guarda su propio precio y su propia descripción.** No cambiar
+  eso por una referencia al catálogo (D-20).
+- **Las reversiones de una anulación van a la caja abierta ahora**, nunca a la
+  sesión original de la venta (D-23).
+- **Las cuentas de plata del frontend van en centavos enteros.** No sumar
+  pesos con decimales de JavaScript (D-24).
 - **El arqueo ciego vive en la API, no en la pantalla.** Si algún endpoint
   empieza a devolver el efectivo esperado de una sesión abierta, el control se
   perdió aunque el frontend no lo muestre (D-12).

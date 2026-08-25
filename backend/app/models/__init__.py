@@ -17,11 +17,15 @@ from app.models.caja import (
     TipoMovimientoCaja,
 )
 from app.models.usuario import RolUsuario, Usuario
+from app.models.venta import Articulo, EstadoVenta, LineaVenta, Venta
 
 __all__ = [
+    "Articulo",
     "AuditLog",
     "AuditMixin",
     "EstadoSesionCaja",
+    "EstadoVenta",
+    "LineaVenta",
     "MedioPago",
     "MovimientoCaja",
     "OperacionAudit",
@@ -32,5 +36,6 @@ __all__ = [
     "TipoMedioPago",
     "TipoMovimientoCaja",
     "Usuario",
+    "Venta",
     "generate_uuid",
 ]

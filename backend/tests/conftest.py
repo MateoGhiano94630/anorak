@@ -13,6 +13,7 @@ Reglas que sostiene este archivo:
 """
 
 from collections.abc import AsyncGenerator
+from decimal import Decimal
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -30,6 +31,7 @@ from app.core.security import create_access_token, hash_password
 from app.main import app
 from app.models.caja import MedioPago, TipoMedioPago
 from app.models.usuario import RolUsuario, Usuario
+from app.models.venta import Articulo
 
 PASSWORD_DE_PRUEBA = "prueba1234"
 
@@ -219,3 +221,20 @@ async def efectivo(medios_pago: list[MedioPago]) -> MedioPago:
 async def qr(medios_pago: list[MedioPago]) -> MedioPago:
     """Un medio que no entra al cajón."""
     return medios_pago[2]
+
+
+# ── Ventas ────────────────────────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture
+async def articulo(db: AsyncSession) -> Articulo:
+    """Un artículo del catálogo. Plano: el talle se anota en la línea."""
+    articulo = Articulo(
+        nombre="Zapatilla Nike Air",
+        categoria="Calzado",
+        precio=Decimal("185000.00"),
+        activo=True,
+    )
+    db.add(articulo)
+    await db.flush()
+    return articulo

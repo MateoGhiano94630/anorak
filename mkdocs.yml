@@ -15,6 +15,10 @@ theme:
 nav:
   - Presentación: index.md
   - Entrar al sistema: entrar.md
+  - Vender:
+      - Vender: vender.md
+      - Las ventas: ventas.md
+      - El catálogo: catalogo.md
   - Caja:
       - La caja: caja.md
       - Cerrar la caja: cierre-de-caja.md

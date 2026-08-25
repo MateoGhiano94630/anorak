@@ -5,7 +5,7 @@
  * un valor guardado, "Administrador" es lo que va en la pantalla.
  */
 
-import type { Rol, TipoMedioPago, TipoMovimientoCaja } from './tipos'
+import type { EstadoVenta, Rol, TipoMedioPago, TipoMovimientoCaja } from './tipos'
 
 export const NOMBRE_ROL: Record<Rol, string> = {
   ADMIN: 'Administrador',
@@ -53,4 +53,9 @@ export const NOMBRE_MEDIO_PAGO: Record<TipoMedioPago, string> = {
   TARJETA_CREDITO: 'Tarjeta de crédito',
   QR: 'QR o billetera',
   TRANSFERENCIA: 'Transferencia',
+}
+
+export const NOMBRE_ESTADO_VENTA: Record<EstadoVenta, string> = {
+  REGISTRADA: 'Registrada',
+  ANULADA: 'Anulada',
 }

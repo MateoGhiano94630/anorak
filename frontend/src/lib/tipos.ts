@@ -114,3 +114,77 @@ export interface SesionEnLista {
   diferencia: string | null
   monto_retirado: string | null
 }
+
+// ── Ventas ────────────────────────────────────────────────────────────────────
+
+export type EstadoVenta = 'REGISTRADA' | 'ANULADA'
+
+export interface Articulo {
+  id: string
+  nombre: string
+  categoria: string | null
+  /** Los importes llegan como texto para no perder los centavos. */
+  precio: string
+  activo: boolean
+}
+
+export interface LineaVenta {
+  id: string
+  numero: number
+  articulo_id: string | null
+  descripcion: string
+  talle: string | null
+  cantidad: number
+  precio_unitario: string
+  descuento: string
+  subtotal: string
+}
+
+export interface CobroVenta {
+  medio_pago_id: string
+  medio_pago: string
+  importe: string
+  /** True cuando es la reversión de una anulación. */
+  es_reversion: boolean
+}
+
+export interface Venta {
+  id: string
+  numero: number
+  estado: EstadoVenta
+  fecha: string
+  registrada_por: string
+  registrada_por_nombre: string | null
+  sesion_caja_id: string
+  subtotal: string
+  descuento: string
+  total: string
+  observaciones: string | null
+  anulada_por_nombre: string | null
+  fecha_anulacion: string | null
+  motivo_anulacion: string | null
+  lineas: LineaVenta[]
+  cobros: CobroVenta[]
+}
+
+export interface VentaEnLista {
+  id: string
+  numero: number
+  estado: EstadoVenta
+  fecha: string
+  registrada_por_nombre: string | null
+  cantidad_articulos: number
+  total: string
+}
+
+/** Una línea del carrito, antes de que la venta exista. */
+export interface LineaDelCarrito {
+  /** Clave local para dibujar la lista. La venta todavía no tiene id. */
+  clave: string
+  articulo_id: string | null
+  descripcion: string
+  talle: string
+  cantidad: number
+  precio_unitario: string
+  descuento: string
+}

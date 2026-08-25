@@ -13,6 +13,8 @@ from app.api.auth import router as auth_router
 from app.api.caja import medios_router
 from app.api.caja import router as caja_router
 from app.api.usuarios import router as usuarios_router
+from app.api.ventas import articulos_router
+from app.api.ventas import router as ventas_router
 from app.core import (
     audit as _audit,  # noqa: F401 — importarlo registra el listener de auditoría
 )
@@ -68,6 +70,8 @@ app.include_router(auth_router)
 app.include_router(usuarios_router)
 app.include_router(medios_router)
 app.include_router(caja_router)
+app.include_router(articulos_router)
+app.include_router(ventas_router)
 app.include_router(audit_log_router)
 
 

@@ -5,7 +5,7 @@ hace; lo que no se puede leer del código es qué alternativa se descartó y a
 cambio de qué. Cuando una regla cambie, se actualiza el razonamiento acá, no
 solo el código.
 
-Última revisión: 24/08/2026 (módulo de caja).
+Última revisión: 24/08/2026 (módulo de ventas).
 
 > **Estado.** El 24/08/2026 se quitaron todos los módulos de negocio que
 > venían de un análisis equivocado, y el mismo día se empezó de nuevo por la
@@ -286,7 +286,110 @@ refleja algo que ya pasó y frenarla no trae la plata de vuelta.
 
 ---
 
-## 5. Cómo se construye: en rodajas verticales
+## 5. Las ventas
+
+Una venta es un **documento histórico**, no una vista de los datos de hoy. Ese
+principio explica casi todas las decisiones que siguen.
+
+### D-18 · El catálogo es opcional, y la línea escrita a mano siempre está
+
+Una línea de venta puede salir de un artículo del catálogo o escribirse a
+mano. Las dos conviven.
+
+**El motivo es de adopción, no técnico.** Un local que vende de todo
+—zapatillas, bermudas, mallas, remeras, camperas, gorras, billeteras— necesita
+días de carga para tener un catálogo completo. Un módulo de ventas que exige
+ese catálogo antes de la primera venta corre serio riesgo de no usarse nunca:
+se sigue vendiendo con el cuaderno mientras el sistema espera que alguien
+termine de cargarlo.
+
+Con el híbrido se vende desde el primer día y el catálogo crece por donde
+duele: lo que más se repite. Cada artículo cargado ahorra tipeo y mejora los
+reportes, sin frenar nada.
+
+**Lo que se resigna, y está aceptado**: mientras haya líneas escritas a mano,
+"Campera azul" y "campera azul" son dos cosas distintas para cualquier
+reporte. Es el costo de poder empezar.
+
+### D-19 · El artículo es plano y el talle vive en la línea
+
+"Zapatilla Nike Air" es **un** artículo, no uno por número. El talle se anota
+al vender, en la línea.
+
+**Alternativa descartada**: un artículo por combinación de talle y color, que
+es lo que hacía el catálogo retirado. Es lo correcto el día que haya que
+controlar existencias, y hoy no hay que controlarlas. Mientras tanto
+multiplica por veinte las filas a cargar sin agregar nada: con el talle en la
+línea igual se puede contestar en qué talles se vende cada modelo.
+
+El día que entre el control de stock, esa decisión se revisa. El relleno no es
+trivial —hay que abrir cada artículo en sus talles— pero es acotado y con las
+ventas ya registradas se sabe qué talles existen de verdad.
+
+### D-20 · La línea guarda el precio con el que se vendió
+
+`descripcion` y `precio_unitario` son copias, aunque la línea apunte a un
+artículo del catálogo.
+
+**Alternativa descartada**: traer el precio por referencia. El día que suben
+los precios cambiarían todas las ventas anteriores, y los reportes de
+rentabilidad mentirían hacia atrás sin que nadie se entere. Hay un test que lo
+comprueba: se vende, se cambia el precio del artículo, y la venta sigue
+diciendo lo mismo.
+
+### D-21 · El pago de una venta no es una tabla propia
+
+Cada cobro **es** un movimiento de caja, con su medio de pago y con las
+columnas de documento apuntando a la venta. No hay una tabla `pago_venta`.
+
+Duplicarlo sería tener dos versiones del mismo dato que se pueden
+desincronizar, y ya se está aplicando el criterio opuesto en todo el sistema:
+lo que se copia es un **estado histórico** (el precio de una línea), no un
+dato que vive en otro lado.
+
+**Cuándo se revisa**: el día que exista un pago que no toque la caja —una
+cuenta corriente— la venta va a necesitar registrar algo que la caja no
+conoce. El relleno desde los movimientos es unívoco, así que la omisión es
+barata.
+
+### D-22 · No se vende con la caja cerrada
+
+Toda venta pertenece a una sesión de caja. Sin sesión abierta, la API
+responde 409 y dice qué hacer.
+
+**Lo que cuesta**: la primera venta del día se frena hasta que alguien abra la
+caja, con el cliente enfrente. **Lo que compra**: que no exista una sola venta
+fuera de un arqueo. La alternativa —abrir la caja sola con el fondo sugerido—
+resuelve el mostrador y arruina el arqueo, porque el monto de apertura pasa a
+ser un número que nadie contó.
+
+### D-23 · Anular no borra, y la reversión va a la caja de ahora
+
+Una venta anulada queda marcada, con quién la anuló y por qué, y el sistema
+genera los cobros al revés para que el arqueo siga cuadrando.
+
+Las reversiones van a la **sesión abierta en este momento**, no a la sesión
+original de la venta. Si fueran a la original y esa caja ya estuviera cerrada,
+se estaría tocando un arqueo congelado: el número que alguien contó y firmó
+dejaría de coincidir con sus movimientos. Es el mismo criterio de una nota de
+crédito, que se emite el día que se emite y no se mete en el mes ya cerrado.
+
+Consecuencia aceptada: no se puede anular sin una caja abierta, porque la
+plata tiene que volver a alguna.
+
+### D-24 · Las cuentas del mostrador se hacen en centavos enteros
+
+`lib/carrito.ts` convierte todo a centavos antes de sumar y vuelve a texto al
+mandarlo.
+
+Sumando en pesos, `0.1 + 0.2` da `0.30000000000000004` en JavaScript. Ese
+centavo de más se cobra mal y recién aparece en el arqueo del cierre, cuando
+ya nadie se acuerda de qué venta salió. Está aparte de la pantalla y testeado
+porque es la parte que no puede estar mal.
+
+---
+
+## 6. Cómo se construye: en rodajas verticales
 
 No se hace el modelo completo de todos los módulos y después las pantallas. Se
 hace de punta a punta, tanda por tanda, y cada tanda deja el sistema
@@ -299,11 +402,12 @@ no ruido de fondo, y no se avanza con el CI roto.
 |---|---|---|
 | 1 | Base: repo, CI, ingreso con roles, marco de pantallas, auditoría automática, migraciones | **Hecha** |
 | 2 | Caja: medios de pago, apertura, movimientos, arqueo ciego y cierre | **Hecha** (24/08/2026) |
-| 3+ | A definir | Pendiente |
+| 3 | Ventas: catálogo opcional, venta con varios medios de pago, anulación | **Hecha** (24/08/2026) |
+| 4+ | A definir | Pendiente |
 
 ---
 
-## 6. Endurecimiento operativo
+## 7. Endurecimiento operativo
 
 Medidas que ya están puestas, heredadas de incidentes reales en otro sistema
 con el mismo stack:
@@ -326,7 +430,7 @@ La URL directa resuelve solo a IPv6 y Railway sale por IPv4: falla con
 
 ---
 
-## 7. Lo que se quitó el 24/08/2026, y qué se aprendió
+## 8. Lo que se quitó el 24/08/2026, y qué se aprendió
 
 Se construyeron y se retiraron tres módulos —catálogo, precios y stock— más
 las sucursales. El código está en el historial de git (commits `Tanda 2` y

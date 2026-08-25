@@ -37,6 +37,45 @@ rehacerse.
 
 ---
 
+## Ventas
+
+### 24/08/2026 — primer módulo
+
+**Agregado**
+
+- Registrar una venta: se arma con lo que se lleva el cliente, se cobra y
+  queda guardada con su número.
+- Se puede vender **sin cargar nada antes**: la prenda se escribe a mano con
+  su precio. El catálogo es opcional y sirve para no tipear lo mismo cada día.
+- Catálogo de artículos, con un artículo por modelo. El talle se escribe al
+  vender, así la lista queda corta.
+- Descuentos por prenda y sobre el total de la venta.
+- Cobro con varios medios a la vez: mitad efectivo y mitad tarjeta es normal
+  en un mostrador. El sistema avisa si falta o sobra.
+- Cálculo del vuelto en pantalla, que no se guarda en ningún lado.
+- Los cobros entran a la caja del día: el efectivo al cajón, la tarjeta y el
+  QR a la cuenta.
+- Buscar una venta por su número o por lo que dice alguna de sus líneas.
+- Anular una venta: no se borra, queda con el motivo y la plata vuelve a la
+  caja abierta.
+
+**Decidido**
+
+- No se vende con la caja cerrada: así no queda ninguna venta fuera de un
+  arqueo.
+- Cada venta guarda el precio con el que se vendió. Cambiar el catálogo no
+  toca las ventas anteriores.
+- Anular una venta de un día ya cerrado devuelve la plata a la caja de hoy,
+  no a la de ese día, que ya está contada y firmada.
+
+**Todavía no**
+
+- La venta no descuenta existencias: no hay control de stock.
+- No hay ticket impreso; después de cobrar se muestra el resumen en pantalla.
+- El mostrador necesita conexión para vender.
+
+---
+
 ## Caja
 
 ### 24/08/2026 — primer módulo

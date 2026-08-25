@@ -15,6 +15,24 @@ interface Acceso {
 
 const ACCESOS: Acceso[] = [
   {
+    ruta: '/vender',
+    titulo: 'Vender',
+    detalle: 'Armar la venta, cobrarla y registrarla.',
+    roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'],
+  },
+  {
+    ruta: '/ventas',
+    titulo: 'Ventas',
+    detalle: 'Todas las ventas, con qué se vendió y cómo se pagó.',
+    roles: ['ADMIN', 'ENCARGADO', 'VENDEDOR'],
+  },
+  {
+    ruta: '/articulos',
+    titulo: 'Catálogo',
+    detalle: 'Lo que el local vende, con su precio. Es opcional.',
+    roles: ['ADMIN', 'ENCARGADO'],
+  },
+  {
     ruta: '/caja',
     titulo: 'Caja',
     detalle: 'Abrirla al llegar, registrar lo que entra y sale, cerrarla al irse.',
