@@ -21,9 +21,14 @@ class Settings(BaseSettings):
     )
 
     # ── Base de datos ────────────────────────────────────────────────────────
-    # En producción va la URL del Session Pooler de Supabase (puerto 6543).
-    # La URL directa (db.<ref>.supabase.co:5432) resuelve solo a IPv6 y Railway
-    # sale por IPv4: falla con "Network is unreachable".
+    # En producción va la URL del **session pooler** de Supabase:
+    # `aws-0-<región>.pooler.supabase.com`, puerto 5432. La URL directa
+    # (db.<ref>.supabase.co) resuelve solo a IPv6 y Railway sale por IPv4:
+    # falla con "Network is unreachable".
+    #
+    # El puerto 6543 del mismo host es el *transaction* pooler, que es otra
+    # cosa: rompe las consultas preparadas de asyncpg salvo que se desactive
+    # el caché a mano. Ver docs/despliegue.md §2.
     database_url: str = "sqlite+aiosqlite:///./local.db"
 
     # ── Sesión ───────────────────────────────────────────────────────────────

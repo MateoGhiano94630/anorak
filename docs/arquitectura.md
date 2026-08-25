@@ -424,9 +424,11 @@ Los dos timeouts se aplican con un `SET` explícito en el evento `connect` y no
 en `connect_args`, porque el Session Pooler de Supabase descarta los
 `server_settings` del startup packet.
 
-Sobre Supabase: en producción va la URL del **Session Pooler** (puerto 6543).
-La URL directa resuelve solo a IPv6 y Railway sale por IPv4: falla con
-"Network is unreachable".
+Sobre Supabase: en producción va la URL del **session pooler**
+(`aws-0-<región>.pooler.supabase.com`, puerto 5432). La URL directa resuelve
+solo a IPv6 y Railway sale por IPv4: falla con "Network is unreachable". El
+puerto 6543 del mismo host es el *transaction* pooler, que rompe las consultas
+preparadas de asyncpg. El paso a paso está en `docs/despliegue.md`.
 
 ---
 

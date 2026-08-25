@@ -43,5 +43,6 @@ cd frontend && pnpm exec tsc -b && pnpm exec eslint . && pnpm test && pnpm build
 | [CLAUDE.md](CLAUDE.md) | Stack, comandos, reglas del proyecto y errores ya resueltos |
 | [docs/arquitectura.md](docs/arquitectura.md) | El porqué de cada decisión y qué alternativa se descartó |
 | [docs/handoff.md](docs/handoff.md) | El estado real: qué está hecho, qué falta |
+| [docs/despliegue.md](docs/despliegue.md) | Cómo poner el sistema en producción, paso a paso |
 | [CHANGELOG.md](CHANGELOG.md) | Qué cambió, por módulo |
 | `docs/manual/` | Manual para quien atiende el local (`mkdocs serve`) |

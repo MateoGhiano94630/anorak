@@ -137,7 +137,7 @@ Probado a mano el 24/08/2026, dos veces:
 |---|---|---|
 | P-1 | La venta **no descuenta existencias**: no hay control de stock. Fue una decisión, no un olvido | Cuando el local lo necesite |
 | P-2 | El repositorio es local: no hay remoto en GitHub, así que el CI nunca corrió | Antes de la próxima tanda |
-| P-3 | Nada está desplegado. Falta crear el proyecto en Railway (con la URL del Session Pooler de Supabase) y en Cloudflare Pages | Cuando haya algo que mostrar |
+| P-3 | Nada está desplegado. El paso a paso está escrito en `docs/despliegue.md`; falta ejecutarlo | Cuando haya algo que mostrar |
 | P-4 | `pre-commit install` no se corrió en la máquina de desarrollo | Antes del primer commit compartido |
 | P-5 | El manual de usuario tiene las páginas de ingreso y usuarios. Falta publicarlo | Va creciendo con cada tanda |
 | P-6 | La facturación está apagada (`ARCA_HABILITADO=false`) y sin certificados | Cuando el dueño los tenga |

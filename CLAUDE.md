@@ -152,6 +152,8 @@ Lo que sigue vigente del contexto:
 - `docs/arquitectura.md` — el porqué de cada decisión y qué alternativa se
   descartó. Se actualiza cuando cambia una regla.
 - `docs/handoff.md` — el estado real: qué se hizo, qué está roto, qué falta migrar.
+- `docs/despliegue.md` — el paso a paso para poner el sistema en producción,
+  con las variables de entorno de cada servicio y los errores típicos.
 - `CHANGELOG.md` — por módulo.
 - `docs/manual/` — manual de usuario en MkDocs, escrito para quien atiende el
   local. Sin palabras de informática.
