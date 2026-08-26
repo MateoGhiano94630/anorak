@@ -1,0 +1,24 @@
+{
+  // Cloudflare despliega esto como un Worker que solo sirve archivos: no hay
+  // código de servidor, solo el sitio compilado. La API vive en Railway.
+  //
+  // El archivo está en el repositorio a propósito. Sin él, la compilación de
+  // Cloudflare lo genera sola en cada despliegue y de paso agrega
+  // dependencias al package.json: el resultado deja de depender de lo que
+  // dice el repositorio y pasa a depender de lo que la herramienta decida ese
+  // día.
+  "name": "anorak",
+  "compatibility_date": "2026-08-25",
+
+  "assets": {
+    "directory": "./dist",
+    // El sistema es una sola página con rutas internas. Sin esto, entrar
+    // directo a /ventas o recargar esa pantalla devuelve 404: ese archivo no
+    // existe, la ruta la resuelve el navegador.
+    "not_found_handling": "single-page-application"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

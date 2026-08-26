@@ -7,7 +7,7 @@ Son cuatro piezas y se arman en este orden, porque cada una necesita algo de
 la anterior:
 
 ```
-GitHub  →  Supabase  →  Railway        →  Cloudflare Pages
+GitHub  →  Supabase  →  Railway        →  Cloudflare Workers
 (código)   (la base)    (la API)           (las pantallas)
 ```
 
@@ -83,8 +83,15 @@ arranca el backend (paso 3).
 ## 3. El backend en Railway
 
 1. **New Project → Deploy from GitHub repo** y elegí el repositorio.
-2. En **Settings → Root Directory** poné `backend`. Sin eso, Railway busca en
-   la raíz del repositorio y no encuentra el proyecto de Python.
+2. En **Settings → Source → Root Directory** poné `backend`.
+
+   > **Este es el paso que más se saltea, y sin él nada funciona.** Si queda
+   > vacío, Railway analiza la raíz del repositorio, ve las carpetas
+   > `backend/`, `frontend/` y `docs/`, y corta con *"Railpack could not
+   > determine how to build the app"* seguido del árbol de archivos que miró.
+   > Ese listado es la pista: si arranca en `./` y muestra `frontend/`, el
+   > root directory no está puesto.
+
 3. En **Settings → Networking** tocá **Generate Domain**. Te va a quedar algo
    como `anorak-production.up.railway.app`. **Anotalo**: lo necesitás en el
    paso 4.
@@ -112,12 +119,19 @@ Dejá `FRONTEND_URL` con cualquier valor por ahora; se corrige en el paso 5.
 
 ### Qué pasa al desplegar
 
-Railway lee `backend/nixpacks.toml`, instala Python 3.12 y las bibliotecas que
-necesita WeasyPrint, y arranca con:
+Railway compila con **Railpack**, que lee `backend/railpack.json`: instala
+Python 3.12, las bibliotecas de sistema que necesita WeasyPrint, y arranca
+con:
 
 ```
 alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
+
+> Railway usaba **Nixpacks** antes y hoy usa **Railpack**. Son dos
+> compiladores distintos con archivos de configuración distintos: un
+> `nixpacks.toml` en el repositorio hoy no lo lee nadie. Este proyecto tiene
+> `railpack.json` y no `nixpacks.toml`, a propósito. Si en **Settings → Build**
+> el builder dice otra cosa, ponelo en **Railpack**.
 
 Las migraciones **corren solas antes de levantar la API**. En este primer
 despliegue son las que crean todas las tablas.
@@ -138,19 +152,34 @@ sección **Problemas conocidos**, al final.
 
 ---
 
-## 4. El frontend en Cloudflare Pages
+## 4. El frontend en Cloudflare
 
-1. **Workers & Pages → Create → Pages → Connect to Git** y elegí el
-   repositorio.
+Va como **Worker con archivos estáticos**, no como Pages. Cloudflare mantiene
+Pages pero todo su desarrollo nuevo va a Workers, y es lo que el panel ofrece
+por defecto al importar un repositorio.
+
+No hay código de servidor: el Worker solo sirve el sitio compilado. La API
+vive en Railway.
+
+1. **Workers & Pages → Create → Import a repository** y elegí el repositorio.
 2. Configuración de la compilación:
 
    | Campo | Valor |
    |---|---|
    | Root directory | `frontend` |
    | Build command | `pnpm install --frozen-lockfile && pnpm build` |
-   | Build output directory | `dist` |
+   | Deploy command | `npx wrangler deploy` |
 
-3. En **Environment variables**, para el entorno de **Production**:
+   El directorio de salida y el manejo de rutas ya están en
+   `frontend/wrangler.jsonc`, que está en el repositorio.
+
+   > **Ese archivo tiene que estar versionado.** Si no está, wrangler entra en
+   > un modo de configuración automática: lo genera solo, agrega
+   > dependencias al `package.json` y decide por su cuenta cómo compilar. El
+   > resultado del despliegue deja de depender de lo que dice el repositorio y
+   > pasa a depender de lo que la herramienta haya decidido ese día.
+
+3. En **Settings → Variables and Secrets**, para **Production**:
 
    | Variable | Valor |
    |---|---|
@@ -163,12 +192,12 @@ sección **Problemas conocidos**, al final.
 > Cloudflare (*Deployments → Retry deployment*).
 
 Cuando termine te va a dar una dirección como
-`anorak.pages.dev`. **Anotala**: la necesitás en el paso 5.
+`anorak.<tu-subdominio>.workers.dev`. **Anotala**: la necesitás en el paso 5.
 
-El archivo `frontend/public/_redirects` ya está en el repositorio y hace que
-entrar directo a `/ventas` o recargar esa pantalla funcione. Sin él,
-Cloudflare devolvería 404 porque ese archivo no existe: la ruta la resuelve el
-navegador.
+En `wrangler.jsonc` está `not_found_handling: "single-page-application"`, que
+es lo que hace que entrar directo a `/ventas` o recargar esa pantalla
+funcione. Sin eso, Cloudflare devolvería 404: ese archivo no existe, la ruta
+la resuelve el navegador.
 
 ---
 
@@ -177,7 +206,7 @@ navegador.
 Volvé a Railway y poné en `FRONTEND_URL` la dirección exacta del paso 4:
 
 ```
-FRONTEND_URL=https://anorak.pages.dev
+FRONTEND_URL=https://anorak.tu-subdominio.workers.dev
 ```
 
 **Sin barra al final y con `https://` adelante.** El navegador compara ese
@@ -190,7 +219,7 @@ Railway reinicia solo al guardar la variable.
 
 ## 6. El primer ingreso
 
-1. Entrá a `https://anorak.pages.dev`.
+1. Entrá a la dirección del paso 4.
 2. Ingresá con `admin@anorak.com.ar` y la contraseña de `SEED_PASSWORD`.
 3. **Cambiala inmediatamente**, desde tu propia cuenta.
 4. Creá las cuentas de quienes van a usar el sistema, en **Usuarios**.
@@ -256,12 +285,18 @@ Tres cosas para tener presentes:
 | Cambié el dominio del backend y el frontend sigue yendo al viejo | `VITE_API_URL` quedó escrita en el JavaScript compilado. *Retry deployment* en Cloudflare |
 | Los logs de Railway están llenos de consultas SQL | Falta `ENVIRONMENT=production` |
 | "La base está en la revisión X y el código espera Y" en los logs | Una migración no se aplicó. El sistema arranca igual a propósito —si el backend no levanta, el local no vende— pero hay que resolverlo |
+| Railway: **"Railpack could not determine how to build the app"** y abajo un árbol que empieza en `./` con `backend/` y `frontend/` | El **Root Directory** no está en `backend`. Ver el paso 3 |
+| Railway ignora el comando de arranque o las bibliotecas de sistema | Está compilando con Nixpacks en vez de Railpack, o al revés. El proyecto trae `railpack.json`: poné el builder en **Railpack** |
+| Cloudflare: el log muestra *"Detected Project Settings… Do you want to modify these settings?"* y empieza a instalar `wrangler` y `@cloudflare/vite-plugin` | Falta `frontend/wrangler.jsonc` en el repositorio, así que wrangler se autoconfigura |
+| Cloudflare: `✘ [ERROR] [WARN] deprecated @testing-library/jest-dom@…` | Una dependencia quedó en una versión que su propio autor retiró. Está clavada en `6.9.1` en el `package.json`; si vuelve a pasar con otro paquete, clavalo igual |
+| Cualquiera de los dos: `ERR_PNPM_IGNORED_BUILDS` | Una dependencia nueva quiere correr scripts de instalación y pnpm no la tiene aprobada. Se aprueba en `pnpm-workspace.yaml` con `onlyBuiltDependencies` |
 
 ### Una limitación conocida
 
-`FRONTEND_URL` acepta **una sola dirección**. Cloudflare Pages genera además
-una dirección distinta por cada rama y por cada vista previa, y esas no van a
-poder hablar con la API.
+`FRONTEND_URL` acepta **una sola dirección**. Cloudflare genera además una
+dirección distinta por cada vista previa, y esas no van a poder hablar con la
+API. Lo mismo el día que le pongas un dominio propio: hay que cambiar
+`FRONTEND_URL` a ese, y entonces la dirección `workers.dev` deja de andar.
 
 Para el uso normal no molesta. Si algún día hace falta probar una vista previa
 contra la API real, hay que cambiar la configuración para que acepte una lista
@@ -274,6 +309,8 @@ de direcciones.
 Antes de darle el sistema a alguien del local:
 
 - [ ] El CI está en verde en GitHub
+- [ ] En Railway, **Root Directory** dice `backend` y el builder es Railpack
+- [ ] En Cloudflare, **Root Directory** dice `frontend`
 - [ ] `DATABASE_URL` apunta al session pooler de Supabase, con `+asyncpg`
 - [ ] `JWT_SECRET_KEY` **no** es la de fábrica
 - [ ] `SEED_PASSWORD` **no** es la de fábrica

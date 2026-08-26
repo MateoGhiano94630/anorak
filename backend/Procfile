@@ -1,5 +1,0 @@
-# Las migraciones corren antes de levantar la API, en el mismo comando de
-# arranque. Si se dejan como paso manual, el día que alguien despliegue sin
-# acordarse el backend arranca contra una base vieja y falla en la primera
-# consulta a una columna que todavía no existe.
-web: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT

@@ -417,7 +417,7 @@ con el mismo stack:
 | `lock_timeout = 10s` | Una escritura que no consigue el lock falla con error en vez de colgarse |
 | `idle_in_transaction_session_timeout = 60s` | PostgreSQL cierra conexiones huérfanas dentro de una transacción y libera sus locks |
 | `pool_pre_ping` | Conexiones muertas por el pooler se detectan antes de usarse |
-| Las migraciones corren en el arranque (`Procfile`) | Desplegar sin migrar deja el backend contra una base vieja |
+| Las migraciones corren en el arranque (`railpack.json`, `deploy.startCommand`) | Desplegar sin migrar deja el backend contra una base vieja |
 | `schema_check` avisa si la base no está al día | Loguea fuerte pero no frena el arranque: si el backend no levanta, el local no vende |
 
 Los dos timeouts se aplican con un `SET` explícito en el evento `connect` y no
