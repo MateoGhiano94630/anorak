@@ -61,9 +61,19 @@ Copiá la del **session pooler** y adaptala así:
 
 ```
 postgresql+asyncpg://postgres.<ref>:<CONTRASEÑA>@aws-0-<región>.pooler.supabase.com:5432/postgres
+                    └──────┬──────┘
+                    el usuario lleva el identificador
+                    del proyecto pegado con un punto
 ```
 
-Dos detalles que hacen fallar el arranque y no son obvios:
+Tres detalles que hacen fallar el arranque y no son obvios:
+
+- **El usuario del pooler no es `postgres`**, es `postgres.<ref>`. Ese punto y
+  el identificador del proyecto son la forma que tiene el pooler de saber a
+  qué base mandarte. Si dejás `postgres` a secas —que es el usuario de la
+  conexión directa— **rechaza la contraseña aunque sea la correcta**, y el
+  error que ves habla de la contraseña y no del usuario. Es el tropiezo más
+  común de este paso.
 
 - El prefijo tiene que ser **`postgresql+asyncpg://`**, no `postgresql://`. El
   sistema usa un driver asincrónico y con el prefijo corto ni siquiera lo carga.
@@ -74,6 +84,19 @@ Dos detalles que hacen fallar el arranque y no son obvios:
   ```bash
   python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" 'tu contraseña'
   ```
+
+### Probá la dirección antes de desplegar
+
+Un despliegue tarda minutos y, si la dirección está mal, lo único que dice es
+"authentication failed". Desde `backend/`:
+
+```bash
+.venv/bin/python scripts/probar_conexion.py "postgresql+asyncpg://postgres.<ref>:...@aws-0-<región>.pooler.supabase.com:5432/postgres"
+```
+
+Tarda dos segundos, revisa los cuatro errores de forma conocidos, intenta
+conectarse de verdad y traduce lo que devuelve Supabase. Nunca imprime la
+contraseña.
 
 No hace falta crear ninguna tabla a mano: las migraciones corren solas cuando
 arranca el backend (paso 3).
@@ -287,6 +310,8 @@ Tres cosas para tener presentes:
 | "La base está en la revisión X y el código espera Y" en los logs | Una migración no se aplicó. El sistema arranca igual a propósito —si el backend no levanta, el local no vende— pero hay que resolverlo |
 | Railway: **"Railpack could not determine how to build the app"** y abajo un árbol que empieza en `./` con `backend/` y `frontend/` | El **Root Directory** no está en `backend`. Ver el paso 3 |
 | Railway ignora el comando de arranque o las bibliotecas de sistema | Está compilando con Nixpacks en vez de Railpack, o al revés. El proyecto trae `railpack.json`: poné el builder en **Railpack** |
+| Railway compila bien pero muere en el arranque con **`password authentication failed for user "postgres"`** | El usuario del pooler tiene que ser `postgres.<ref>`, no `postgres`. Ver el paso 2, y comprobalo con `scripts/probar_conexion.py` antes de volver a desplegar |
+| **`tenant or user not found`** | El identificador del proyecto que va después de `postgres.` está mal copiado |
 | Cloudflare: el log muestra *"Detected Project Settings… Do you want to modify these settings?"* y empieza a instalar `wrangler` y `@cloudflare/vite-plugin` | Falta `frontend/wrangler.jsonc` en el repositorio, así que wrangler se autoconfigura |
 | Cloudflare: `✘ [ERROR] [WARN] deprecated @testing-library/jest-dom@…` | Una dependencia quedó en una versión que su propio autor retiró. Está clavada en `6.9.1` en el `package.json`; si vuelve a pasar con otro paquete, clavalo igual |
 | Cualquiera de los dos: `ERR_PNPM_IGNORED_BUILDS` | Una dependencia nueva quiere correr scripts de instalación y pnpm no la tiene aprobada. Se aprueba en `pnpm-workspace.yaml` con `onlyBuiltDependencies` |

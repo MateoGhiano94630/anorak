@@ -43,13 +43,13 @@ jobs:
       # commit. La versión de black está clavada en pyproject.toml y tiene que
       # coincidir con el rev del hook de pre-commit.
       - name: Lint (ruff)
-        run: ruff check app tests alembic
+        run: ruff check app tests alembic scripts
 
       - name: Formato (black)
-        run: black --check app tests alembic
+        run: black --check app tests alembic scripts
 
       - name: Tipos (mypy)
-        run: mypy app
+        run: mypy app scripts
 
       # Corren sobre SQLite en memoria: sin base de datos de servicio, sin
       # .env y sin red.

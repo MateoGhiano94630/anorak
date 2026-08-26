@@ -24,9 +24,10 @@ react-router-dom · PWA con vite-plugin-pwa (Workbox) + Dexie para la cola offli
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/uvicorn app.main:app --reload        # API en :8000
 .venv/bin/pytest                               # tests (SQLite en memoria)
-.venv/bin/ruff check app tests alembic         # lint
-.venv/bin/black app tests alembic              # formato
-.venv/bin/mypy app                             # tipos
+.venv/bin/ruff check app tests alembic scripts   # lint
+.venv/bin/black app tests alembic scripts        # formato
+.venv/bin/mypy app scripts                       # tipos
+.venv/bin/python scripts/probar_conexion.py "postgresql+asyncpg://..."   # probar una URL de base
 .venv/bin/alembic revision --autogenerate -m "..."   # nueva migración
 .venv/bin/alembic upgrade head                 # aplicarlas
 
@@ -40,6 +41,10 @@ pnpm exec tsc -b && pnpm exec eslint . && pnpm build
 
 Después de generar una migración: `black` y `ruff check --fix` sobre
 `alembic/`, o el CI la rechaza por formato.
+
+`scripts/probar_conexion.py` dice qué está mal en una URL de base de datos sin
+tener que desplegar: un despliegue tarda minutos y solo dice "authentication
+failed"; esto tarda dos segundos y dice cuál de las cuatro cosas es.
 
 ## Reglas que no se negocian
 
