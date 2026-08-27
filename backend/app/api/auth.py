@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from app.core.deps import CurrentUser, DbSession
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import create_access_token, hashear_password, verificar_password
 from app.models.usuario import Usuario
 from app.schemas.auth import (
     CambioPassword,
@@ -40,7 +40,9 @@ async def login(datos: LoginRequest, db: DbSession) -> TokenResponse:
     # Mismo mensaje para email inexistente que para contraseña equivocada: si
     # difieren, el formulario de ingreso pasa a ser una forma de averiguar qué
     # direcciones tienen cuenta.
-    if usuario is None or not verify_password(datos.password, usuario.password_hash):
+    if usuario is None or not await verificar_password(
+        datos.password, usuario.password_hash
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email o contraseña incorrectos",
@@ -79,10 +81,10 @@ async def cambiar_password(
     datos: CambioPassword, usuario: CurrentUser, _db: DbSession
 ) -> CambioPasswordOk:
     """Cambia la contraseña propia, verificando la anterior."""
-    if not verify_password(datos.password_actual, usuario.password_hash):
+    if not await verificar_password(datos.password_actual, usuario.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña actual no es correcta",
         )
-    usuario.password_hash = hash_password(datos.password_nueva)
+    usuario.password_hash = await hashear_password(datos.password_nueva)
     return CambioPasswordOk()

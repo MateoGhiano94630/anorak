@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from app.core.deps import AdminUser, DbSession
-from app.core.security import hash_password
+from app.core.security import hashear_password
 from app.models.usuario import Usuario
 from app.schemas.usuario import UsuarioCreate, UsuarioOut, UsuarioUpdate
 
@@ -35,7 +35,7 @@ async def crear_usuario(
     usuario = Usuario(
         nombre=datos.nombre,
         email=email,
-        password_hash=hash_password(datos.password),
+        password_hash=await hashear_password(datos.password),
         rol=datos.rol,
         activo=True,
     )

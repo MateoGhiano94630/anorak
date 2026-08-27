@@ -4,6 +4,7 @@ import logging
 import sys
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +21,7 @@ from app.core import (
 )
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
+from app.core.diagnostico import medir_tiempos
 from app.core.schema_check import verificar_esquema_al_dia
 from app.services import seed_service
 
@@ -77,5 +79,28 @@ app.include_router(audit_log_router)
 
 @app.get("/health", tags=["sistema"])
 async def health() -> dict[str, str]:
-    """Chequeo de vida para Railway."""
+    """Chequeo de vida para Railway.
+
+    No toca la base a propósito, aunque la tentación de medirla acá sea obvia:
+    si el health check dependiera de la base, un rato de Supabase caído haría
+    que Railway diera el despliegue por muerto y lo reiniciara en loop. La
+    medición vive en `/diagnostico`, que no es un health check de nadie.
+    """
     return {"estado": "ok", "version": app.version}
+
+
+@app.get("/diagnostico", tags=["sistema"])
+async def diagnostico() -> dict[str, Any]:
+    """Dice a dónde se va el tiempo de un ingreso, medido desde el servidor.
+
+    Abrila en el navegador cuando el sistema esté lento. Devuelve cuánto tarda
+    este servidor en abrir una conexión con la base, cuánto tarda un viaje de
+    ida y vuelta hasta ella, y cuánto tarda un bcrypt en esta máquina.
+
+    Es pública, y tiene que serlo: sirve justamente cuando no se puede entrar,
+    así que pedirle sesión la volvería inútil. No expone nada secreto —números,
+    el nombre del entorno y el host de la base, sin usuario ni contraseña—,
+    pero es una herramienta de diagnóstico y no una parte del sistema: cuando
+    el problema esté resuelto, esto se borra.
+    """
+    return await medir_tiempos()

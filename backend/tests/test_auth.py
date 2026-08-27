@@ -1,8 +1,11 @@
 """Ingreso al sistema y sesión."""
 
+import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
+from app.core import database
+from app.core.config import settings
 from app.models.usuario import Usuario
 from tests.conftest import PASSWORD_DE_PRUEBA, autenticar
 
@@ -12,6 +15,52 @@ async def test_health_no_pide_sesion(client: AsyncClient) -> None:
     respuesta = await client.get("/health")
     assert respuesta.status_code == 200
     assert respuesta.json()["estado"] == "ok"
+
+
+async def test_diagnostico_mide_sin_pedir_sesion(
+    client: AsyncClient,
+    engine_test: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """El diagnóstico contesta sin autenticación y devuelve los tres números.
+
+    Tiene que andar sin sesión: sirve justamente cuando no se puede entrar.
+    """
+    monkeypatch.setattr(database, "engine", engine_test)
+    monkeypatch.setattr(settings, "database_url", "sqlite+aiosqlite:///:memory:")
+
+    respuesta = await client.get("/diagnostico")
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["base"].get("error") is None
+    assert cuerpo["base"]["conexion_nueva_ms"] >= 0
+    assert cuerpo["base"]["ida_y_vuelta_ms"] >= 0
+    assert cuerpo["cpu"]["bcrypt_ms"] > 0
+    assert "ingreso_estimado_ms" in cuerpo
+
+
+async def test_diagnostico_informa_la_base_caida_sin_romperse(
+    client: AsyncClient,
+    engine_test: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Si la base no responde, el diagnóstico lo dice en vez de fallar.
+
+    Es el caso para el que se escribió: cuando todo anda, el número no hace
+    falta. Un 500 acá dejaría sin respuesta justo a quien está tratando de
+    averiguar por qué no puede entrar.
+    """
+    monkeypatch.setattr(database, "engine", engine_test)
+    monkeypatch.setattr(
+        settings, "database_url", "postgresql+asyncpg://nadie@127.0.0.1:1/x"
+    )
+
+    respuesta = await client.get("/diagnostico")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["base"]["conexion_nueva_ms"] is None
+    assert respuesta.json()["base"]["error"]
 
 
 async def test_login_correcto_devuelve_token_y_usuario(

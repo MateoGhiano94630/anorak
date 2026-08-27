@@ -24,6 +24,34 @@ export class ErrorApi extends Error {
 /** Se dispara cuando el servidor rechaza el token: la sesión terminó. */
 export const EVENTO_SESION_VENCIDA = 'anorak:sesion-vencida'
 
+/**
+ * Cuánto se espera una respuesta antes de darla por perdida.
+ *
+ * Sin esto, `fetch` espera para siempre: si el servidor se quedó pensando, la
+ * pantalla se queda con el spinner girando y nadie se entera nunca de nada.
+ * Media hora de mostrador se puede perder así, mirando una rueda.
+ *
+ * Treinta segundos es largo a propósito. Un servidor que estuvo dormido tarda
+ * en despertarse, y cortarlo antes de tiempo convertiría una demora en un
+ * error. Pasado ese rato ya no es demora: algo se rompió, y quien está
+ * atendiendo necesita que se lo digan para poder reintentar.
+ */
+const ESPERA_MAXIMA_MS = 30_000
+
+/** Subir un archivo es más lento que pedir un dato: viaja el archivo entero. */
+const ESPERA_MAXIMA_SUBIDA_MS = 60_000
+
+/** Traduce la falla de `fetch` al mensaje que corresponde. */
+function errorDeRed(error: unknown): ErrorApi {
+  // `AbortSignal.timeout` aborta con un DOMException llamado 'TimeoutError'.
+  // Distinguirlo importa: "sin conexión" manda a revisar el wifi del local, y
+  // acá el wifi puede estar perfecto y el problema estar del otro lado.
+  if (error instanceof DOMException && error.name === 'TimeoutError') {
+    return new ErrorApi('El servidor tardó demasiado en responder. Probá de nuevo.', 0)
+  }
+  return new ErrorApi('Sin conexión con el servidor.', 0)
+}
+
 interface Opciones {
   metodo?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
   cuerpo?: unknown
@@ -63,10 +91,11 @@ export async function pedir<T>(ruta: string, opciones: Opciones = {}): Promise<T
       method: opciones.metodo ?? 'GET',
       headers: cabeceras,
       body: opciones.cuerpo === undefined ? null : JSON.stringify(opciones.cuerpo),
+      signal: AbortSignal.timeout(ESPERA_MAXIMA_MS),
     })
-  } catch {
+  } catch (error) {
     // fetch solo rechaza por problemas de red, no por códigos de error.
-    throw new ErrorApi('Sin conexión con el servidor.', 0)
+    throw errorDeRed(error)
   }
 
   if (respuesta.status === 401 && !opciones.sinSesion) {
@@ -101,9 +130,10 @@ export async function subirArchivo<T>(ruta: string, archivo: File): Promise<T> {
       method: 'POST',
       headers: cabeceras,
       body: formulario,
+      signal: AbortSignal.timeout(ESPERA_MAXIMA_SUBIDA_MS),
     })
-  } catch {
-    throw new ErrorApi('Sin conexión con el servidor.', 0)
+  } catch (error) {
+    throw errorDeRed(error)
   }
 
   if (respuesta.status === 401) {
